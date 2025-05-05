@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+*.log.*
+
+# Diretórios de build
+dist/
+build/
+
+# Arquivos de configuração do TypeScript
+*.tsbuildinfo
+
+# Arquivos de configuração do editor
+.vscode/
+.idea/
+
+# Dependências de ambiente
+.env
+
+# Arquivos temporários
+*.swp
+*~
+
+# Banco de dados local (Sequelize)
+sequelize-meta.json
+
+# Dependências de pacotes do sistema
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de backup
+*.bak
