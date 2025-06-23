@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import EventFactory from '../models/events.model';
+import EventsPageFactory from '../models/events.model';
 import sequelize from '../config/db';
 
-const Event = EventFactory(sequelize);
+const EventsPage = EventsPageFactory(sequelize);
 
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, 'assets/events'),
@@ -20,76 +20,103 @@ export const upload = multer({ storage });
 export const createEvent = async (req: Request, res: Response): Promise<Response> => {
     const {
         title,
+        subtitle,
         description,
-        date,
-        time,
-        location,
-        link,
-        benefits,
-        faq,
         price,
+        stripePriceId,
         type,
         maxPresentialParticipants,
+        participants,
+        objectives,
+        targetAudience,
+        methods,
+        eventDate,
+        startTime,
+        endTime,
+        breakDuration,
+        formats,
+        location,
+        onlineLink,
+        materials,
+        limitedSeats,
+        bonuses,
+        faqs,
+        ctaText,
+        ctaUrl,
     } = req.body;
+
     const images = req.files ? (req.files as Express.Multer.File[]).map(file => file.path) : [];
 
     try {
-        const newEvent = await Event.create({
+        const newPage = await EventsPage.create({
             title,
+            subtitle,
             description,
-            date,
-            time,
-            location,
-            link,
-            benefits,
-            faq,
             price,
-            images,
+            stripePriceId,
             type,
             maxPresentialParticipants,
+            participants,
+            objectives,
+            targetAudience,
+            methods,
+            eventDate,
+            startTime,
+            endTime,
+            breakDuration,
+            formats,
+            location,
+            onlineLink,
+            materials,
+            limitedSeats,
+            bonuses,
+            faqs,
+            ctaText,
+            ctaUrl,
+            images,
         });
 
-        const eventWithImageUrls = {
-            ...newEvent.toJSON(),
-            images: images.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
+        const pageWithImageUrls = {
+            ...newPage.toJSON(),
+            images: newPage.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
         };
 
-        return res.status(201).json({ message: 'Evento criado com sucesso!', event: eventWithImageUrls });
+        return res.status(201).json({ message: 'Página de evento criada com sucesso!', event: pageWithImageUrls });
     } catch (err) {
-        console.error('Erro ao criar evento:', err);
-        return res.status(500).json({ message: 'Erro ao criar evento' });
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao criar página de evento' });
     }
 };
 
-export const getAllEvents = async (_: Request, res: Response): Promise<Response> => {
+export const getAllEvents = async (_req: Request, res: Response): Promise<Response> => {
     try {
-        const events = await Event.findAll();
-        const eventsWithImageUrls = events.map(event => ({
-            ...event.toJSON(),
-            images: event.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
+        const pages = await EventsPage.findAll();
+        const pagesWithImageUrls = pages.map(page => ({
+            ...page.toJSON(),
+            images: page.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
         }));
-        return res.status(200).json({ events: eventsWithImageUrls });
+        return res.status(200).json({ events: pagesWithImageUrls });
     } catch (err) {
-        console.error('Erro ao listar eventos:', err);
-        return res.status(500).json({ message: 'Erro ao listar eventos' });
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao listar páginas de evento' });
     }
 };
 
 export const getEventById = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     try {
-        const event = await Event.findByPk(id);
-        if (!event) return res.status(404).json({ message: 'Evento não encontrado' });
+        const page = await EventsPage.findByPk(id);
+        if (!page) return res.status(404).json({ message: 'Página de evento não encontrada' });
 
-        const eventWithImageUrls = {
-            ...event.toJSON(),
-            images: event.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
+        const pageWithImageUrls = {
+            ...page.toJSON(),
+            images: page.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
         };
 
-        return res.status(200).json({ event: eventWithImageUrls });
+        return res.status(200).json({ event: pageWithImageUrls });
     } catch (err) {
-        console.error('Erro ao buscar evento:', err);
-        return res.status(500).json({ message: 'Erro ao buscar evento' });
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao buscar página de evento' });
     }
 };
 
@@ -97,75 +124,104 @@ export const updateEvent = async (req: Request, res: Response): Promise<Response
     const { id } = req.params;
     const {
         title,
+        subtitle,
         description,
-        date,
-        time,
-        location,
-        link,
-        benefits,
-        faq,
         price,
+        stripePriceId,
         type,
         maxPresentialParticipants,
+        participants,
+        objectives,
+        targetAudience,
+        methods,
+        eventDate,
+        startTime,
+        endTime,
+        breakDuration,
+        formats,
+        location,
+        onlineLink,
+        materials,
+        limitedSeats,
+        bonuses,
+        faqs,
+        ctaText,
+        ctaUrl,
     } = req.body;
+
     const images = req.files ? (req.files as Express.Multer.File[]).map(file => file.path) : [];
 
     try {
-        const event = await Event.findByPk(id);
-        if (!event) return res.status(404).json({ message: 'Evento não encontrado' });
+        const page = await EventsPage.findByPk(id);
+        if (!page) return res.status(404).json({ message: 'Página de evento não encontrada' });
 
-        if (images.length > 0 && event.images?.length) {
-            event.images.forEach(img => {
+        if (images.length && page.images?.length) {
+            page.images.forEach(img => {
                 const imgPath = path.resolve('assets', 'events', path.basename(img));
-                fs.unlink(imgPath, err => err && console.error(`Erro ao excluir imagem: ${imgPath}`, err));
+                fs.unlink(imgPath, err => err && console.error(err));
             });
         }
 
-        await event.update({
+        await page.update({
             title,
+            subtitle,
             description,
-            date,
-            time,
-            location,
-            link,
-            benefits,
-            faq,
             price,
-            images: images.length ? images : event.images,
+            stripePriceId,
             type,
             maxPresentialParticipants,
+            participants,
+            objectives,
+            targetAudience,
+            methods,
+            eventDate,
+            startTime,
+            endTime,
+            breakDuration,
+            formats,
+            location,
+            onlineLink,
+            materials,
+            limitedSeats,
+            bonuses,
+            faqs,
+            ctaText,
+            ctaUrl,
+            images: images.length ? images : page.images,
         });
 
-        const eventWithImageUrls = {
-            ...event.toJSON(),
-            images: (images.length ? images : event.images)?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
+        const updatedPage = await EventsPage.findByPk(id);
+        const pageWithImageUrls = {
+            ...updatedPage!.toJSON(),
+            images: updatedPage!.images?.map(img => `http://localhost:3000/assets/events/${path.basename(img)}`),
         };
 
-        return res.status(200).json({ message: 'Evento atualizado com sucesso!', event: eventWithImageUrls });
+        return res.status(200).json({ message: 'Página de evento atualizada com sucesso!', event: pageWithImageUrls });
     } catch (err) {
-        console.error('Erro ao atualizar evento:', err);
-        return res.status(500).json({ message: 'Erro ao atualizar evento' });
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao atualizar página de evento' });
     }
 };
 
 export const deleteEvent = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     try {
-        const event = await Event.findByPk(id);
-        if (!event) return res.status(404).json({ message: 'Evento não encontrado' });
+        const page = await EventsPage.findByPk(id);
+        if (!page) return res.status(404).json({ message: 'Página de evento não encontrada' });
 
-        if (event.images?.length) {
-            event.images.forEach(img => {
+        if (page.images?.length) {
+            page.images.forEach(img => {
                 const imgPath = path.resolve('assets', 'events', path.basename(img));
-                fs.unlink(imgPath, err => err && console.error(`Erro ao excluir imagem: ${imgPath}`, err));
+                fs.unlink(imgPath, err => err && console.error(err));
             });
         }
 
-        await event.destroy();
-        await sequelize.query("SELECT setval('events_id_seq', (SELECT MAX(id) FROM events));");
-        return res.status(200).json({ message: 'Evento deletado com sucesso' });
+        await page.destroy();
+        await sequelize.query("SELECT setval('events_pages_id_seq', (SELECT COALESCE(MAX(id),0) FROM events_pages));");
+
+        return res.status(200).json({ message: 'Página de evento deletada com sucesso!' });
     } catch (err) {
-        console.error('Erro ao deletar evento:', err);
-        return res.status(500).json({ message: 'Erro ao deletar evento' });
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao deletar página de evento' });
     }
 };
