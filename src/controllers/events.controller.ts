@@ -6,13 +6,13 @@ import { hydrateEventWithSchema, validateEventData, loadSchema } from '../utils/
 const Event = EventFactory(sequelize);
 
 export const createEvent = async (req: Request, res: Response): Promise<Response> => {
-    const { event_source, ...eventData } = req.body;
+    const { event_source, event } = req.body;
 
-    if (!event_source) {
-        return res.status(400).json({ message: 'O campo event_source é obrigatório.' });
+    if (!event_source || !event) {
+        return res.status(400).json({ message: 'Os campos event_source e event são obrigatórios.' });
     }
 
-    const validation = validateEventData(event_source, eventData);
+    const validation = validateEventData(event_source, event);
     if (!validation.isValid) {
         return res.status(400).json({ message: 'Erro de validação', errors: validation.errors });
     }
@@ -20,14 +20,10 @@ export const createEvent = async (req: Request, res: Response): Promise<Response
     try {
         const newEvent = await Event.create({
             event_source,
-            event: eventData,
+            event,
         });
 
-        return res.status(201).json({
-            message: 'Evento criado com sucesso!',
-            event_source: newEvent.event_source,
-            event: newEvent.toJSON().event,
-        });
+        return res.status(201).json(newEvent.toJSON());
     } catch (err: any) {
         if (err.name === 'SequelizeUniqueConstraintError') {
             return res.status(409).json({ message: `A chave '${event_source}' já existe.` });
@@ -35,15 +31,6 @@ export const createEvent = async (req: Request, res: Response): Promise<Response
         console.error(err);
         return res.status(500).json({ message: 'Erro ao criar evento.' });
     }
-};
-
-export const getEventSchema = async (req: Request, res: Response): Promise<Response> => {
-    const { event_source } = req.params;
-    const schema = loadSchema(event_source);
-    if (!schema) {
-        return res.status(404).json({ message: 'Esquema de evento não encontrado.' });
-    }
-    return res.status(200).json({ schema });
 };
 
 export const getAllEvents = async (_req: Request, res: Response): Promise<Response> => {
@@ -62,10 +49,14 @@ export const getEventBySource = async (req: Request, res: Response): Promise<Res
     try {
         const eventFound = await Event.findByPk(event_source);
 
-        const eventData = eventFound ? eventFound.toJSON().event : {};
+        if (!eventFound) {
+            return res.status(404).json({ message: 'Evento não encontrado.' });
+        }
+
+        const eventData = eventFound.toJSON().event;
         const hydratedEvent = hydrateEventWithSchema(event_source, eventData);
 
-        return res.status(200).json({ event_source, event: hydratedEvent });
+        return res.status(200).json(hydratedEvent);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao buscar evento.' });
@@ -87,12 +78,9 @@ export const updateEvent = async (req: Request, res: Response): Promise<Response
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
-        await event.update({ event: eventData });
+        const updatedEvent = await event.update({ event: eventData });
 
-        return res.status(200).json({
-            message: 'Evento atualizado com sucesso!',
-            event: event.toJSON()
-        });
+        return res.status(200).json(updatedEvent.toJSON());
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao atualizar evento.' });
@@ -114,12 +102,14 @@ export const partialUpdateEvent = async (req: Request, res: Response): Promise<R
             ...updates,
         };
 
-        await event.update({ event: updatedEventData });
+        const validation = validateEventData(event_source, updatedEventData);
+        if (!validation.isValid) {
+            return res.status(400).json({ message: 'Erro de validação', errors: validation.errors });
+        }
 
-        return res.status(200).json({
-            message: 'Evento atualizado parcialmente com sucesso!',
-            event: { event_source, event: updatedEventData }
-        });
+        const updatedEvent = await event.update({ event: updatedEventData });
+
+        return res.status(200).json(updatedEvent.toJSON());
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao atualizar evento parcialmente.' });
@@ -140,12 +130,14 @@ export const markAsComplete = async (req: Request, res: Response): Promise<Respo
             isComplete: true,
         };
 
-        await event.update({ event: updatedEventData });
+        const validation = validateEventData(event_source, updatedEventData);
+        if (!validation.isValid) {
+            return res.status(400).json({ message: 'Erro de validação', errors: validation.errors });
+        }
 
-        return res.status(200).json({
-            message: 'Evento marcado como completo!',
-            event: { event_source, event: updatedEventData }
-        });
+        const updatedEvent = await event.update({ event: updatedEventData });
+
+        return res.status(200).json(updatedEvent.toJSON());
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao marcar evento como completo.' });
@@ -167,4 +159,13 @@ export const deleteEvent = async (req: Request, res: Response): Promise<Response
         console.error(err);
         return res.status(500).json({ message: 'Erro ao deletar evento.' });
     }
+};
+
+export const getEventSchema = async (req: Request, res: Response): Promise<Response> => {
+    const { event_source } = req.params;
+    const schema = loadSchema(event_source);
+    if (!schema) {
+        return res.status(404).json({ message: 'Esquema de evento não encontrado.' });
+    }
+    return res.status(200).json({ schema });
 };

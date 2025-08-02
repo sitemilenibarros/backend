@@ -11,6 +11,16 @@
       "default": "Uma breve introdução sobre o que você pode esperar.",
       "validation": { "required": true }
     },
+    "event_date": {
+      "type": "DATE",
+      "default": null,
+      "validation": { "required": true }
+    },
+    "event_register_url": {
+      "type": "URL",
+      "default": null,
+      "validation": { "required": true }
+    },
     "about_section_target_title": {
       "type": "STRING",
       "default": "Para quem é este evento?"

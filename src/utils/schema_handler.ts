@@ -17,7 +17,6 @@ export const loadSchema = (eventSource: string) => {
 export const hydrateEventWithSchema = (eventSource: string, eventData: any) => {
     const schema = loadSchema(eventSource);
     if (!schema) {
-        // Retorna os dados originais se não houver esquema
         return eventData;
     }
 
@@ -38,31 +37,58 @@ export const hydrateEventWithSchema = (eventSource: string, eventData: any) => {
 export const validateEventData = (eventSource: string, data: any) => {
     const schema = loadSchema(eventSource);
     if (!schema) {
-        return { isValid: true, errors: [] }; // Nenhum esquema, então tudo é válido
+        // Se não houver esquema, a validação é ignorada, retornando um estado válido
+        return { isValid: true, errors: [] };
     }
 
     const errors: string[] = [];
+    const urlRegex = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i;
+
     for (const key in data) {
         const field = schema.fields[key];
+
+        // Se o campo não está no esquema, é um campo desconhecido
         if (!field) {
             errors.push(`Campo desconhecido: ${key}`);
             continue;
         }
 
-        // Exemplo simples de validação de tipo
-        if (field.type === 'STRING' && typeof data[key] !== 'string' && data[key] !== null) {
+        const value = data[key];
+
+        // Validação de tipo genérica
+        if (field.type === 'STRING' && typeof value !== 'string' && value !== null) {
             errors.push(`Campo '${key}' deve ser uma string.`);
         }
-        if (field.type === 'TEXT' && typeof data[key] !== 'string' && data[key] !== null) {
+        if (field.type === 'TEXT' && typeof value !== 'string' && value !== null) {
             errors.push(`Campo '${key}' deve ser um texto.`);
         }
-        // Adicione outras validações conforme necessário...
+        if (field.type === 'ARRAY' && !Array.isArray(value) && value !== null) {
+            errors.push(`Campo '${key}' deve ser um array.`);
+        }
+        if (field.type === 'NUMBER' && typeof value !== 'number' && value !== null) {
+            errors.push(`Campo '${key}' deve ser um número.`);
+        }
+        if (field.type === 'DATE' && value !== null) {
+            // Verifica se o valor é uma string e se pode ser parseada como uma data válida
+            if (typeof value !== 'string' || isNaN(Date.parse(value))) {
+                errors.push(`Campo '${key}' deve ser uma data válida no formato ISO 8601.`);
+            }
+        }
+
+        // Validação para o tipo 'URL'
+        if (field.type === 'URL' && value !== null) {
+            // Verifica se o valor é uma string e se corresponde ao regex de URL
+            if (typeof value !== 'string' || !urlRegex.test(value)) {
+                errors.push(`Campo '${key}' deve ser um link válido.`);
+            }
+        }
     }
 
-    // Verifique campos obrigatórios
     for (const key in schema.fields) {
         const field = schema.fields[key];
-        if (field.validation?.required && (data[key] === undefined || data[key] === null || data[key] === '')) {
+        const value = data[key];
+
+        if (field.validation?.required && (value === undefined || value === null || value === '')) {
             errors.push(`Campo '${key}' é obrigatório.`);
         }
     }
