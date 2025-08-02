@@ -1,0 +1,78 @@
+{
+  "event_source": "about_section_event",
+  "fields": {
+    "about_section_main_title": {
+      "type": "STRING",
+      "default": "Sobre o Evento",
+      "validation": { "required": true }
+    },
+    "about_section_main_subtitle": {
+      "type": "TEXT",
+      "default": "Uma breve introdução sobre o que você pode esperar.",
+      "validation": { "required": true }
+    },
+    "about_section_target_title": {
+      "type": "STRING",
+      "default": "Para quem é este evento?"
+    },
+    "about_section_target_content": {
+      "type": "TEXT",
+      "default": "Este evento é ideal para..."
+    },
+    "about_section_highlight_text": {
+      "type": "TEXT",
+      "default": ""
+    },
+    "about_section_benefits_title": {
+      "type": "STRING",
+      "default": "O que você vai aprender"
+    },
+    "about_section_benefits_list": {
+      "type": "ARRAY",
+      "itemType": "STRING",
+      "default": []
+    },
+    "about_section_cards": {
+      "type": "ARRAY",
+      "itemType": "OBJECT",
+      "schema": {
+        "icon": { "type": "STRING", "default": "" },
+        "title": { "type": "STRING", "default": "" }
+      },
+      "default": []
+    },
+    "about_section_methods_title": {
+      "type": "STRING",
+      "default": "Nossa metodologia"
+    },
+    "about_section_methods_list": {
+      "type": "ARRAY",
+      "itemType": "STRING",
+      "default": []
+    },
+    "about_section_methods_description": {
+      "type": "TEXT",
+      "default": "Trabalhamos com uma metodologia inovadora..."
+    },
+    "about_section_image1": {
+      "type": "STRING",
+      "default": null
+    },
+    "about_section_image2": {
+      "type": "STRING",
+      "default": null
+    },
+    "about_section_image3": {
+      "type": "STRING",
+      "default": null
+    },
+    "about_section_image4": {
+      "type": "STRING",
+      "default": null
+    },
+    "about_section_conclusion_text": {
+      "type": "TEXT",
+      "default": ""
+    }
+  }
+}
