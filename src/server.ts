@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import sequelize from './config/db';
 import authRoutes from './routes/auth.routes';
-import eventsRoutes from './routes/events.route';
+import eventsPagesRoutes from './routes/eventsPage.route';
 import serviceRouter from './routes/service.routes';
 import { serveStaticFiles } from './middlewares/staticFilesMiddleware';
 import testimonialsRoutes from './routes/testimonials.route';
@@ -23,7 +23,7 @@ app.use(express.json());
 serveStaticFiles(app);
 
 app.use('/api/auth', authRoutes);
-app.use('/api', eventsRoutes);
+app.use('/api', eventsPagesRoutes);
 app.use('/api', serviceRouter);
 app.use('/api', testimonialsRoutes);
 app.use('/api/ebooks', ebookRoutes)

@@ -34,7 +34,7 @@ export const hydrateEventWithSchema = (eventSource: string, eventData: any) => {
 };
 
 // Valida os dados de entrada com base no esquema
-export const validateEventData = (eventSource: string, data: any) => {
+export const validateEventPageData = (eventSource: string, data: any) => {
     const schema = loadSchema(eventSource);
     if (!schema) {
         // Se não houver esquema, a validação é ignorada, retornando um estado válido

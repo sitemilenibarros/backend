@@ -1,31 +1,39 @@
-// src/models/events.model.ts
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
 export default (sequelize: Sequelize) => {
-    class Event extends Model {
+    class EventPage extends Model {
+        public event_id!: string;
         public event_source!: string;
-        public event!: any;
+        public content!: any;
     }
 
-    Event.init(
+    EventPage.init(
         {
+            event_id: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                // references: {
+                //     model: 'events_table',
+                //     key: 'id',
+                // },
+            },
             event_source: {
                 type: DataTypes.STRING,
                 allowNull: false,
                 primaryKey: true,
             },
-            event: {
+            content: {
                 type: DataTypes.JSONB,
                 allowNull: false,
             },
         },
         {
             sequelize,
-            modelName: 'Event',
-            tableName: 'events',
+            modelName: 'EventPage',
+            tableName: 'event_pages',
             timestamps: true,
         }
     );
 
-    return Event;
+    return EventPage;
 };
