@@ -24,7 +24,7 @@ fs.readdirSync(modelsPath).forEach((file) => {
 });
 
 
-sequelize.sync({ force: true })
+sequelize.sync()
   .then(() => {
     console.log('Banco de dados sincronizado com sucesso!');
     // Logar os modelos e tabelas criadas
