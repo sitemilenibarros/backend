@@ -35,8 +35,8 @@ sequelize.authenticate()
   .then(() => console.log('Conexão com o banco de dados estabelecida com sucesso.'))
   .catch(err => console.error('Não foi possível conectar ao banco de dados:', err));
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = process.env.PORT || '3001';
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
