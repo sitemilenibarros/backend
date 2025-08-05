@@ -12,6 +12,7 @@ export default (sequelize: Sequelize) => {
             event_id: {
                 type: DataTypes.STRING,
                 allowNull: false,
+                primaryKey: true,
                 // references: {
                 //     model: 'events_table',
                 //     key: 'id',

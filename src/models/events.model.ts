@@ -7,6 +7,8 @@ export default (sequelize: Sequelize) => {
         public description!: string;
         public start_date!: Date;
         public end_date!: Date;
+        public status!: string;
+        public category_id!: number;
     }
 
     Event.init(
@@ -31,6 +33,19 @@ export default (sequelize: Sequelize) => {
             end_date: {
                 type: DataTypes.DATE,
                 allowNull: true,
+            },
+            status: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                defaultValue: 'pending',
+            },
+            category_id: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                references: {
+                    model: 'event_categories',
+                    key: 'id',
+                },
             },
         },
         {
