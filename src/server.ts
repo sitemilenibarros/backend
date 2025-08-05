@@ -12,6 +12,7 @@ import { serveStaticFiles } from './middlewares/staticFilesMiddleware';
 import testimonialsRoutes from './routes/testimonials.route';
 import ebookRoutes from './routes/ebook.routes';
 import assetsRoutes from './routes/assets.routes';
+import eventCategoryRoutes from "./routes/eventCategory.routes";
 
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use('/api', serviceRouter);
 app.use('/api', testimonialsRoutes);
 app.use('/api/ebooks', ebookRoutes);
 app.use('/api/assets', assetsRoutes);
+app.use('/api/event-categories', eventCategoryRoutes);
 
 
 sequelize.authenticate()
