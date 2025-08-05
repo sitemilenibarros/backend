@@ -11,6 +11,7 @@ import serviceRouter from './routes/service.routes';
 import { serveStaticFiles } from './middlewares/staticFilesMiddleware';
 import testimonialsRoutes from './routes/testimonials.route';
 import ebookRoutes from './routes/ebook.routes';
+import assetsRoutes from './routes/assets.routes';
 
 
 dotenv.config();
@@ -28,7 +29,8 @@ app.use('/api', eventsPagesRoutes);
 app.use('/api', eventsRouter)
 app.use('/api', serviceRouter);
 app.use('/api', testimonialsRoutes);
-app.use('/api/ebooks', ebookRoutes)
+app.use('/api/ebooks', ebookRoutes);
+app.use('/api/assets', assetsRoutes);
 
 
 sequelize.authenticate()
