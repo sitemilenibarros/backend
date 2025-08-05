@@ -7,7 +7,7 @@ import {
     updateEventPage,
     partialUpdateEventPage,
     deleteEventPage,
-    getEventSchema,
+    getEventSchema, deleteEventPagesByEventId,
 } from '../controllers/eventsPage.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
 
@@ -21,6 +21,7 @@ eventsPageRoutes.get('/event-pages/:event_id/:event_source', asyncMiddleware(get
 eventsPageRoutes.put('/event-pages/:event_id/:event_source', asyncMiddleware(updateEventPage));
 eventsPageRoutes.patch('/event-pages/:event_id/:event_source', asyncMiddleware(partialUpdateEventPage));
 eventsPageRoutes.delete('/event-pages/:event_id/:event_source', asyncMiddleware(deleteEventPage));
+eventsPageRoutes.delete('/event-pages/:event_id', asyncMiddleware(deleteEventPagesByEventId));
 
 eventsPageRoutes.get('/event-pages/schema/:event_source', asyncMiddleware(getEventSchema));
 

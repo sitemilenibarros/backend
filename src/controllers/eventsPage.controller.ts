@@ -165,6 +165,24 @@ export const deleteEventPage = async (req: Request, res: Response): Promise<Resp
     }
 };
 
+export const deleteEventPagesByEventId = async (req: Request, res: Response): Promise<Response> => {
+    const { event_id } = req.params;
+    try {
+        const deletedRows = await EventPage.destroy({
+            where: { event_id },
+        });
+
+        if (deletedRows === 0) {
+            return res.status(404).json({ message: 'Nenhuma página de evento encontrada para este ID.' });
+        }
+
+        return res.status(200).json({ message: 'Páginas de evento deletadas com sucesso!' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao deletar páginas de evento.' });
+    }
+}
+
 export const getEventSchema = async (req: Request, res: Response): Promise<Response> => {
     const { event_source } = req.params;
     const schema = loadSchema(event_source);
