@@ -68,12 +68,28 @@ export const listAssets = async (req: Request, res: Response): Promise<Response>
 
     try {
         const files = await fs.promises.readdir(assetsDir);
-        const assets = files.map(file => ({
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+
+        const paginatedFiles = files.slice(startIndex, endIndex);
+
+        const assets = paginatedFiles.map(file => ({
             filename: file,
             url: `${req.protocol}://${req.get('host')}/assets/uploads/${file}`
         }));
 
-        return res.status(200).json(assets);
+        const responseData = {
+            totalAssets: files.length,
+            currentPage: page,
+            totalPages: Math.ceil(files.length / limit),
+            assets: assets
+        };
+
+        return res.status(200).json(responseData);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao listar os assets.' });
