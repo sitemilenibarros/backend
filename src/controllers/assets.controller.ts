@@ -62,3 +62,20 @@ export const deleteAsset = async (req: Request, res: Response): Promise<Response
         return res.status(500).json({ message: 'Erro ao deletar o asset.' });
     }
 };
+
+export const listAssets = async (req: Request, res: Response): Promise<Response> => {
+    const assetsDir = path.join(__dirname, '../assets/uploads');
+
+    try {
+        const files = await fs.promises.readdir(assetsDir);
+        const assets = files.map(file => ({
+            filename: file,
+            url: `${req.protocol}://${req.get('host')}/assets/uploads/${file}`
+        }));
+
+        return res.status(200).json(assets);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Erro ao listar os assets.' });
+    }
+}
