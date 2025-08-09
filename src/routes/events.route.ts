@@ -1,4 +1,3 @@
-// src/routes/event.routes.ts
 import { Router } from 'express';
 import {
     createEvent,
@@ -8,6 +7,10 @@ import {
     partialUpdateEvent,
     deleteEvent,
 } from '../controllers/events.controller';
+import {
+    createStripeProduct,
+    createStripePrice, createCheckoutSession,
+} from '../controllers/stripe.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
 
 const eventRoutes = Router();
@@ -18,5 +21,9 @@ eventRoutes.get('/events/:id', asyncMiddleware(getEventById));
 eventRoutes.put('/events/:id', asyncMiddleware(updateEvent));
 eventRoutes.patch('/events/:id', asyncMiddleware(partialUpdateEvent));
 eventRoutes.delete('/events/:id', asyncMiddleware(deleteEvent));
+
+eventRoutes.post('/events/:id/stripe/product', asyncMiddleware(createStripeProduct));
+eventRoutes.post('/events/:id/stripe/price', asyncMiddleware(createStripePrice));
+eventRoutes.post('/events/:id/stripe/checkout', asyncMiddleware(createCheckoutSession));
 
 export default eventRoutes;
