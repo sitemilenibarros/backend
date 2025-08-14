@@ -1,12 +1,11 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
-// Modelo de Serviços
 export default (sequelize: Sequelize) => {
     class Service extends Model {
         public id!: number;
         public name!: string;
         public description!: string;
-        public image!: string; // Alterando de "icon" para "image"
+        public image!: string;
     }
 
     Service.init(
@@ -21,7 +20,7 @@ export default (sequelize: Sequelize) => {
             },
             image: {
                 type: DataTypes.STRING,
-                allowNull: false, // Agora a imagem é obrigatória
+                allowNull: false,
             },
         },
         {

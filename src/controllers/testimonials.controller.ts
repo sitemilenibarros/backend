@@ -1,27 +1,12 @@
 import { Request, Response } from 'express';
-import multer from 'multer';
-import path from 'path';
 import TestimonialFactory from '../models/testimonials.model';
 import sequelize from '../config/db';
-import fs from 'fs';
+import {Op} from "sequelize";
 
 const Testimonial = TestimonialFactory(sequelize);
 
-
-const storage = multer.diskStorage({
-    destination: (_req, _file, cb) => {
-        cb(null, 'assets/testimonials');
-    },
-    filename: (_req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-
 export const createTestimonial = async (req: Request, res: Response): Promise<Response> => {
-    const { name, testimonial } = req.body;
-    const photo = req.file?.path;
+    const { name, testimonial, photo } = req.body;
 
     try {
         const newTestimonial = await Testimonial.create({
@@ -30,31 +15,42 @@ export const createTestimonial = async (req: Request, res: Response): Promise<Re
             photo,
         });
 
-        const testimonialWithImageUrl = {
-            ...newTestimonial.toJSON(),
-            photo: photo ? `http://localhost:3000/assets/testimonials/${path.basename(photo)}` : null
-        };
-
-        return res.status(201).json({ message: 'Testemunho criado com sucesso!', testimonial: testimonialWithImageUrl });
+        return res.status(201).json({ message: 'Testemunho criado com sucesso!', testimonial: newTestimonial });
     } catch (err) {
         console.error('Erro ao criar testemunho:', err);
         return res.status(500).json({ message: 'Erro ao criar testemunho' });
     }
 };
 
-export const getAllTestimonials = async (_: Request, res: Response): Promise<Response> => {
+export const getAllTestimonials = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const testimonials = await Testimonial.findAll();
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const offset = (page - 1) * limit;
+        const { name, testimonial } = req.query;
 
+        const where: any = {};
+        if (name) {
+            where.name = { [Op.iLike]: `%${name}%` };
+        }
+        if (testimonial) {
+            where.testimonial = { [Op.iLike]: `%${testimonial}%` };
+        }
 
-        const testimonialsWithImageUrls = testimonials.map(testimonial => {
-            return {
-                ...testimonial.toJSON(),
-                photo: testimonial.photo ? `http://localhost:3000/assets/testimonials/${path.basename(testimonial.photo)}` : null
-            };
+        const { rows: testimonials, count: total } = await Testimonial.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
         });
 
-        return res.status(200).json({ testimonials: testimonialsWithImageUrls });
+        return res.status(200).json({
+            testimonials,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (err) {
         console.error('Erro ao listar testemunhos:', err);
         return res.status(500).json({ message: 'Erro ao listar testemunhos' });
@@ -71,12 +67,7 @@ export const getTestimonialById = async (req: Request, res: Response): Promise<R
             return res.status(404).json({ message: 'Testemunho não encontrado' });
         }
 
-        const testimonialWithImageUrl = {
-            ...testimonial.toJSON(),
-            photo: testimonial.photo ? `http://localhost:3000/assets/testimonials/${path.basename(testimonial.photo)}` : null
-        };
-
-        return res.status(200).json({ testimonial: testimonialWithImageUrl });
+        return res.status(200).json({ testimonial: testimonial });
     } catch (err) {
         console.error('Erro ao buscar testemunho:', err);
         return res.status(500).json({ message: 'Erro ao buscar testemunho' });
@@ -94,20 +85,12 @@ export const updateTestimonial = async (req: Request, res: Response): Promise<Re
             return res.status(404).json({ message: 'Testemunho não encontrado' });
         }
 
-        if (photo && testimonialToUpdate.photo) {
-            const oldPhotoPath = path.resolve('assets', 'testimonials', path.basename(testimonialToUpdate.photo)); // Caminho da foto antiga
-            fs.unlink(oldPhotoPath, (err) => {
-                if (err) {
-                    console.error(`Erro ao excluir foto antiga: ${oldPhotoPath}`, err);
-                }
-            });
-        }
+        const updateData: any = {};
+        if (name !== undefined) updateData.name = name;
+        if (testimonial !== undefined) updateData.testimonial = testimonial;
+        if (photo !== undefined) updateData.photo = photo;
 
-        await testimonialToUpdate.update({
-            name,
-            testimonial,
-            photo,
-        });
+        await testimonialToUpdate.update(updateData);
 
         return res.status(200).json({ message: 'Testemunho atualizado com sucesso!', testimonial: testimonialToUpdate });
     } catch (err) {
@@ -123,16 +106,7 @@ export const deleteTestimonial = async (req: Request, res: Response): Promise<Re
         const testimonial = await Testimonial.findByPk(id);
 
         if (!testimonial) {
-            return res.status(404).json({ message: 'Testemunho não encontrado' });
-        }
-
-        if (testimonial.photo) {
-            const photoPath = path.resolve('assets', 'testimonials', path.basename(testimonial.photo)); // Caminho da foto
-            fs.unlink(photoPath, (err) => {
-                if (err) {
-                    console.error(`Erro ao excluir foto: ${photoPath}`, err);
-                }
-            });
+            return res.status(200).json({ message: 'Testemunho deletado com sucesso' });
         }
 
         await testimonial.destroy();

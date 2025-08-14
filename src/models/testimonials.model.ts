@@ -1,6 +1,5 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
-// Modelo de Testemunhos
 export default (sequelize: Sequelize) => {
     class Testimonial extends Model {
         public id!: number;

@@ -1,31 +1,11 @@
 import { Request, Response } from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import ServiceFactory from '../models/services.model';
 import sequelize from '../config/db';
+import { Op } from 'sequelize';
 const Service = ServiceFactory(sequelize);
 
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'assets/services');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ storage });
-
 export const createService = async (req: Request, res: Response): Promise<Response> => {
-    const { name, description } = req.body;
-    const image = req.file?.path;
-
-    if (!image) {
-        return res.status(400).json({ message: 'Imagem é obrigatória' });
-    }
+    const { name, description, image } = req.body;
 
     try {
 
@@ -35,12 +15,7 @@ export const createService = async (req: Request, res: Response): Promise<Respon
             image,
         });
 
-        const serviceWithImageUrl = {
-            ...newService.toJSON(),
-            image: `http://localhost:3000/assets/services/${path.basename(image)}`
-        };
-
-        return res.status(201).json({ message: 'Serviço criado com sucesso!', service: serviceWithImageUrl });
+        return res.status(201).json({ message: 'Serviço criado com sucesso!', service: newService });
     } catch (err) {
         console.error('Erro ao criar serviço:', err);
         return res.status(500).json({ message: 'Erro ao criar serviço' });
@@ -48,18 +23,35 @@ export const createService = async (req: Request, res: Response): Promise<Respon
 };
 
 
-export const getAllServices = async (_: Request, res: Response): Promise<Response> => {
+export const getAllServices = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const services = await Service.findAll();
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const offset = (page - 1) * limit;
+        const { name, description } = req.query;
 
-        const servicesWithImageUrls = services.map(service => {
-            return {
-                ...service.toJSON(),
-                image: `http://localhost:3000/assets/services/${path.basename(service.image)}`
-            };
+        const where: any = {};
+        if (name) {
+            where.name = { [Op.iLike]: `%${name}%` };
+        }
+        if (description) {
+            where.description = { [Op.iLike]: `%${description}%` };
+        }
+
+        const { rows: services, count: total } = await Service.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
         });
 
-        return res.status(200).json({ services: servicesWithImageUrls });
+        return res.status(200).json({
+            services,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (err) {
         console.error('Erro ao listar serviços:', err);
         return res.status(500).json({ message: 'Erro ao listar serviços' });
@@ -77,12 +69,7 @@ export const getServiceById = async (req: Request, res: Response): Promise<Respo
             return res.status(404).json({ message: 'Serviço não encontrado' });
         }
 
-        const serviceWithImageUrl = {
-            ...service.toJSON(),
-            image: `http://localhost:3000/assets/services/${path.basename(service.image)}`
-        };
-
-        return res.status(200).json({ service: serviceWithImageUrl });
+        return res.status(200).json({ service: service });
     } catch (err) {
         console.error('Erro ao buscar serviço:', err);
         return res.status(500).json({ message: 'Erro ao buscar serviço' });
@@ -101,24 +88,12 @@ export const updateService = async (req: Request, res: Response): Promise<Respon
             return res.status(404).json({ message: 'Serviço não encontrado' });
         }
 
+        const updateData: any = {};
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (image !== undefined) updateData.image = image;
 
-        if (service.image && image !== service.image) {
-            const oldImagePath = path.resolve('assets', 'services', path.basename(service.image).replace(/\\/g, '/'));
-            fs.unlink(oldImagePath, (err) => {
-                if (err) {
-                    console.error(`Erro ao excluir imagem antiga: ${oldImagePath}`, err);
-                } else {
-                    console.log(`Imagem antiga excluída com sucesso: ${oldImagePath}`);
-                }
-            });
-        }
-
-
-        await service.update({
-            name,
-            description,
-            image,
-        });
+        await service.update(updateData);
 
         return res.status(200).json({ message: 'Serviço atualizado com sucesso!', service });
     } catch (err) {
@@ -135,18 +110,9 @@ export const deleteService = async (req: Request, res: Response): Promise<Respon
         const service = await Service.findByPk(id);
 
         if (!service) {
-            return res.status(404).json({ message: 'Serviço não encontrado' });
+            return res.status(200).json({ message: 'Serviço deletado com sucesso' });
         }
 
-
-        if (service.image) {
-            const imagePath = path.resolve('assets', 'services', path.basename(service.image)); // Caminho da imagem
-            fs.unlink(imagePath, (err) => {
-                if (err) {
-                    console.error(`Erro ao excluir imagem: ${imagePath}`, err);
-                }
-            });
-        }
         await service.destroy();
         return res.status(200).json({ message: 'Serviço deletado com sucesso' });
     } catch (err) {
