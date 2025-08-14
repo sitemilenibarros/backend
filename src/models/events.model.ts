@@ -9,6 +9,8 @@ export default (sequelize: Sequelize) => {
         public end_date!: Date;
         public status!: string;
         public category_id!: number;
+        public stripe_product_id?: string;
+        public price_value?: number; // Valor do preço em centavos
     }
 
     Event.init(
@@ -46,6 +48,14 @@ export default (sequelize: Sequelize) => {
                     model: 'event_categories',
                     key: 'id',
                 },
+            },
+            stripe_product_id: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            price_value: {
+                type: DataTypes.INTEGER, // Valor do preço em centavos
+                allowNull: true,
             },
         },
         {

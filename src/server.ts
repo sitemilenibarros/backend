@@ -13,6 +13,7 @@ import testimonialsRoutes from './routes/testimonials.route';
 import ebookRoutes from './routes/ebook.routes';
 import assetsRoutes from './routes/assets.routes';
 import eventCategoryRoutes from "./routes/eventCategory.routes";
+import customersRoutes from "./routes/customers.routes";
 
 
 dotenv.config();
@@ -28,6 +29,7 @@ serveStaticFiles(app);
 app.use('/api/auth', authRoutes);
 app.use('/api', eventsPagesRoutes);
 app.use('/api', eventsRouter)
+app.use('/api', customersRoutes)
 app.use('/api', serviceRouter);
 app.use('/api', testimonialsRoutes);
 app.use('/api/ebooks', ebookRoutes);
