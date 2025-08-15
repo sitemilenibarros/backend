@@ -10,7 +10,7 @@ export default (sequelize: Sequelize) => {
         public status!: string;
         public category_id!: number;
         public stripe_product_id?: string;
-        public price_value?: number; // Valor do preço em centavos
+        public price_value?: number;
     }
 
     Event.init(
