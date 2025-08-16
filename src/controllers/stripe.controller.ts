@@ -163,6 +163,13 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
             mode: 'payment',
             line_items: [{ price: priceId, quantity: 1 }],
             customer_email: email,
+            payment_method_options: {
+                card: {
+                    installments: {
+                        enabled: true
+                    }
+                }
+            },
             metadata: {
                 local_customer_id: pendingCustomer.id.toString(),
                 event_id: event.id.toString(),
@@ -171,7 +178,6 @@ export const createCheckoutSession = async (req: Request, res: Response): Promis
             success_url: successUrl,
             cancel_url: cancelUrl,
         });
-
         return res.status(200).json({ url: session.url });
     } catch (error: any) {
         if (pendingCustomer) {
