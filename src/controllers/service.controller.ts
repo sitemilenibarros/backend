@@ -5,14 +5,35 @@ import { Op } from 'sequelize';
 const Service = ServiceFactory(sequelize);
 
 export const createService = async (req: Request, res: Response): Promise<Response> => {
-    const { name, description, image } = req.body;
+    const {
+        titulo_servico,
+        subtitulo_servico,
+        imagem,
+        descricao_servico,
+        titulo_topicos_servico,
+        topicos_servico,
+        objetivo_servico,
+        citacao_servico,
+        cta_titulo,
+        cta_subtitulo,
+        cta_texto_botao,
+        cta_link_botao
+    } = req.body;
 
     try {
-
         const newService = await Service.create({
-            name,
-            description,
-            image,
+            titulo_servico,
+            subtitulo_servico,
+            imagem,
+            descricao_servico,
+            titulo_topicos_servico,
+            topicos_servico,
+            objetivo_servico,
+            citacao_servico,
+            cta_titulo,
+            cta_subtitulo,
+            cta_texto_botao,
+            cta_link_botao
         });
 
         return res.status(201).json({ message: 'Serviço criado com sucesso!', service: newService });
@@ -79,7 +100,20 @@ export const getServiceById = async (req: Request, res: Response): Promise<Respo
 
 export const updateService = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
-    const { name, description, image } = req.body;
+    const {
+        titulo_servico,
+        subtitulo_servico,
+        imagem,
+        descricao_servico,
+        titulo_topicos_servico,
+        topicos_servico,
+        objetivo_servico,
+        citacao_servico,
+        cta_titulo,
+        cta_subtitulo,
+        cta_texto_botao,
+        cta_link_botao
+    } = req.body;
 
     try {
         const service = await Service.findByPk(id);
@@ -89,9 +123,18 @@ export const updateService = async (req: Request, res: Response): Promise<Respon
         }
 
         const updateData: any = {};
-        if (name !== undefined) updateData.name = name;
-        if (description !== undefined) updateData.description = description;
-        if (image !== undefined) updateData.image = image;
+        if (titulo_servico !== undefined) updateData.titulo_servico = titulo_servico;
+        if (subtitulo_servico !== undefined) updateData.subtitulo_servico = subtitulo_servico;
+        if (imagem !== undefined) updateData.imagem = imagem;
+        if (descricao_servico !== undefined) updateData.descricao_servico = descricao_servico;
+        if (titulo_topicos_servico !== undefined) updateData.titulo_topicos_servico = titulo_topicos_servico;
+        if (topicos_servico !== undefined) updateData.topicos_servico = topicos_servico;
+        if (objetivo_servico !== undefined) updateData.objetivo_servico = objetivo_servico;
+        if (citacao_servico !== undefined) updateData.citacao_servico = citacao_servico;
+        if (cta_titulo !== undefined) updateData.cta_titulo = cta_titulo;
+        if (cta_subtitulo !== undefined) updateData.cta_subtitulo = cta_subtitulo;
+        if (cta_texto_botao !== undefined) updateData.cta_texto_botao = cta_texto_botao;
+        if (cta_link_botao !== undefined) updateData.cta_link_botao = cta_link_botao;
 
         await service.update(updateData);
 
