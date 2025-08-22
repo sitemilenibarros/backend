@@ -108,11 +108,22 @@ export const listAssets = async (req: Request, res: Response): Promise<Response>
             assetsDir = path.join(assetsDir, dir);
         }
         const files = await fs.promises.readdir(assetsDir);
+
+        const filesWithStats = await Promise.all(
+            files.map(async (file) => {
+                const filePath = path.join(assetsDir, file);
+                const stat = await fs.promises.stat(filePath);
+                return { file, mtime: stat.mtime };
+            })
+        );
+
+        filesWithStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+        const sortedFiles = filesWithStats.map(f => f.file);
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
-        const paginatedFiles = files.slice(startIndex, endIndex);
+        const paginatedFiles = sortedFiles.slice(startIndex, endIndex);
         const assets = paginatedFiles.map(file => ({
             filename: file,
             url: dir
