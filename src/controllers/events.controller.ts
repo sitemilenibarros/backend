@@ -14,11 +14,26 @@ export const createEvent = async (req: Request, res: Response): Promise<Response
     }
 };
 
-export const getAllEvents = async (_req: Request, res: Response): Promise<Response> => {
+export const getAllEvents = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const allEvents = await Event.findAll();
-        const eventsList = allEvents.map(e => e.toJSON());
-        return res.status(200).json({ events: eventsList });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const offset = (page - 1) * limit;
+
+        const { rows: events, count: total } = await Event.findAndCountAll({
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        const eventsList = events.map((e: any) => e.toJSON());
+        return res.status(200).json({
+            events: eventsList,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro ao listar eventos.' });
