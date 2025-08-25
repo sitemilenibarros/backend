@@ -14,6 +14,7 @@ import ebookRoutes from './routes/ebook.routes';
 import assetsRoutes from './routes/assets.routes';
 import eventCategoryRoutes from "./routes/eventCategory.routes";
 import customersRoutes from "./routes/customers.routes";
+import formRoutes from './routes/form.route';
 
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api', testimonialsRoutes);
 app.use('/api/ebooks', ebookRoutes);
 app.use('/api/assets', assetsRoutes);
 app.use('/api/event-categories', eventCategoryRoutes);
+app.use('/api/forms', formRoutes);
 
 
 sequelize.authenticate()
