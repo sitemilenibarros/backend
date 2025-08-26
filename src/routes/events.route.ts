@@ -7,6 +7,7 @@ import {
     partialUpdateEvent,
     deleteEvent,
     sendMailToEvent,
+    sendMailOnsiteToEvent,
 } from '../controllers/events.controller';
 import {
     createStripeProduct,
@@ -28,5 +29,6 @@ eventRoutes.post('/events/:id/stripe/product', authMiddleware, asyncMiddleware(c
 eventRoutes.post('/events/:id/stripe/price', authMiddleware, asyncMiddleware(createStripePrice));
 eventRoutes.post('/events/:id/stripe/checkout', authMiddleware, asyncMiddleware(createCheckoutSession));
 eventRoutes.post('/events/:eventId/send-mail', authMiddleware, asyncMiddleware(sendMailToEvent));
+eventRoutes.post('/events/:eventId/send-mail-onsite', authMiddleware, asyncMiddleware(sendMailOnsiteToEvent));
 
 export default eventRoutes;

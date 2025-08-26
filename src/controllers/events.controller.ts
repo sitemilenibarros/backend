@@ -154,68 +154,36 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
 
     for (const form of forms) {
         const data: any = form.form_data || {};
-        const email = data.youtubeEmail || data.email || null;
         const modality = data.modality || '';
-        if (!email) {
-            console.warn(`[sendMailToEvent] Formulário sem e-mail válido. ID: ${form.id}`);
+        const email = data.youtubeEmail || null;
+
+        if (modality === 'online' || !email) {
             continue;
         }
 
-        let htmlBody = '';
-        if (modality === 'presencial') {
-            const address = event.address || '';
-            const mapsUrl = address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : '';
-            console.log(`[sendMailToEvent] [${email}] Evento presencial. Endereço: ${address}`);
-            htmlBody = `
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">
-              <tr>
-                <td align="center">
-                  <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; box-shadow:0 2px 8px #e3eaf2; margin:32px 0;">
-                    <tr>
-                      <td style="padding:32px; color:#1a237e;">
-                        <h2 style="color:#1565c0; margin-bottom:8px;">Obrigado por se inscrever no evento <span style='color:#1a237e'>${event.title}</span>!</h2>
-                        <p style="font-size:17px;">Estamos felizes com a sua presença no nosso evento presencial.</p>
-                        <table style="margin:24px 0;">
-                          <tr>
-                            <td style="background:#e3eaf2; border-radius:8px; padding:16px; color:#1565c0; font-size:17px;">
-                              <strong>Endereço do evento:</strong><br>
-                              ${address ? `<a href='${mapsUrl}' style='color:#1565c0; text-decoration:underline;' target='_blank'>${address}</a>` : 'Endereço não informado.'}
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-            `;
-        } else {
-            console.log(`[sendMailToEvent] [${email}] Evento online. Link: ${content_url}`);
-            htmlBody = `
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">
-              <tr>
-                <td align="center">
-                  <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; box-shadow:0 2px 8px #e3eaf2; margin:32px 0;">
-                    <tr>
-                      <td style="padding:32px; color:#1a237e;">
-                        <h2 style="color:#1565c0; margin-bottom:8px;">Obrigado por se inscrever no evento <span style='color:#1a237e'>${event.title}</span>!</h2>
-                        <p style="font-size:17px;">Estamos felizes com a sua presença no nosso evento online.</p>
-                        <table style="margin:24px 0;">
-                          <tr>
-                            <td align="center">
-                              <a href="${content_url}" style="display:inline-block; padding:14px 32px; background:#1565c0; color:#fff; border-radius:8px; text-decoration:none; font-weight:bold; font-size:18px; border:0; cursor:pointer;">Acessar Evento</a>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-            `;
-        }
+        let htmlBody = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">
+          <tr>
+            <td align="center">
+              <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; box-shadow:0 2px 8px #e3eaf2; margin:32px 0;">
+                <tr>
+                  <td style="padding:32px; color:#1a237e;">
+                    <h2 style="color:#1565c0; margin-bottom:8px;">Obrigado por se inscrever no evento <span style='color:#1a237e'>${event.title}</span>!</h2>
+                    <p style="font-size:17px;">Estamos felizes com a sua presença no nosso evento online.</p>
+                    <table style="margin:24px 0;">
+                      <tr>
+                        <td align="center">
+                          <a href="${content_url}" style="display:inline-block; padding:14px 32px; background:#1565c0; color:#fff; border-radius:8px; text-decoration:none; font-weight:bold; font-size:18px; border:0; cursor:pointer;">Acessar Evento</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        `;
 
         try {
             await sendMail({
@@ -238,5 +206,85 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
     }
 
     console.log(`[sendMailToEvent] E-mails enviados com sucesso para evento ${eventId}. Total: ${sentCount}, Falhas: ${failedCount}`);
+    return res.status(200).json({ message: 'E-mails enviados com sucesso.', sentCount, failedCount, failedEmails });
+};
+
+export const sendMailOnsiteToEvent = async (req: Request, res: Response): Promise<Response> => {
+    const { eventId } = req.params;
+
+    console.log(`[sendMailOnsiteToEvent] Iniciando envio de e-mails presenciais para evento ${eventId}`);
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+        console.warn(`[sendMailOnsiteToEvent] Evento não encontrado: ${eventId}`);
+        return res.status(404).json({ message: 'Evento não encontrado.' });
+    }
+
+    const forms = await Form.findAll({ where: { event_id: eventId } });
+    console.log(`[sendMailOnsiteToEvent] Total de forms encontrados: ${forms.length}`);
+
+    const bccList = (process.env.GMAIL_BCC || '').split(',').map(e => e.trim()).filter(e => !!e);
+    console.log(`[sendMailOnsiteToEvent] E-mails de cópia oculta (BCC):`, bccList);
+
+    let sentCount = 0;
+    let failedCount = 0;
+    let failedEmails: string[] = [];
+
+    for (const form of forms) {
+        const data: any = form.form_data || {};
+        const modality = data.modality || '';
+        const email = data.email || null;
+
+        if (modality !== 'presencial' || !email) {
+            continue;
+        }
+
+        const address = event.address || '';
+        const mapsUrl = address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : '';
+        let htmlBody = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">
+          <tr>
+            <td align="center">
+              <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; box-shadow:0 2px 8px #e3eaf2; margin:32px 0;">
+                <tr>
+                  <td style="padding:32px; color:#1a237e;">
+                    <h2 style="color:#1565c0; margin-bottom:8px;">Obrigado por se inscrever no evento <span style='color:#1a237e'>${event.title}</span>!</h2>
+                    <p style="font-size:17px;">Estamos felizes com a sua presença no nosso evento presencial.</p>
+                    <table style="margin:24px 0;">
+                      <tr>
+                        <td style="background:#e3eaf2; border-radius:8px; padding:16px; color:#1565c0; font-size:17px;">
+                          <strong>Endereço do evento:</strong><br>
+                          ${address ? `<a href='${mapsUrl}' style='color:#1565c0; text-decoration:underline;' target='_blank'>${address}</a>` : 'Endereço não informado.'}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        `;
+
+        try {
+            await sendMail({
+                to: email,
+                bcc: bccList.length ? bccList.join(',') : undefined,
+                subject: `Confirmação de presença - ${event.title}`,
+                html: htmlBody,
+            });
+            sentCount++;
+        } catch (err) {
+            console.error(`[sendMailOnsiteToEvent] Erro ao enviar e-mail para ${email}:`, err);
+            failedCount++;
+            failedEmails.push(email);
+        }
+    }
+
+    if (sentCount === 0) {
+        console.warn(`[sendMailOnsiteToEvent] Nenhum e-mail enviado com sucesso para evento ${eventId}`);
+        return res.status(400).json({ message: 'Nenhum e-mail enviado com sucesso.', failedEmails });
+    }
+
+    console.log(`[sendMailOnsiteToEvent] E-mails enviados com sucesso para evento ${eventId}. Total: ${sentCount}, Falhas: ${failedCount}`);
     return res.status(200).json({ message: 'E-mails enviados com sucesso.', sentCount, failedCount, failedEmails });
 };
