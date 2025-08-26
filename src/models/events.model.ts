@@ -11,6 +11,7 @@ export default (sequelize: Sequelize) => {
         public category_id!: number;
         public stripe_product_id?: string;
         public price_value?: number;
+        public address?: string;
     }
 
     Event.init(
@@ -48,6 +49,10 @@ export default (sequelize: Sequelize) => {
                     model: 'event_categories',
                     key: 'id',
                 },
+            },
+            address: {
+                type: DataTypes.STRING,
+                allowNull: true,
             },
             stripe_product_id: {
                 type: DataTypes.STRING,
