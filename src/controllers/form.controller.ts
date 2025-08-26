@@ -23,6 +23,7 @@ export const createForm = async (req: Request, res: Response) => {
 
         return res.status(201).json(form);
     } catch (error) {
+        console.error('Erro ao salvar formulário:', error);
         return res.status(500).json({ message: 'Erro ao salvar formulário', error });
     }
 };
@@ -47,6 +48,7 @@ export const listForms = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit)
         });
     } catch (error) {
+        console.error('Erro ao listar formulários:', error);
         return res.status(500).json({ message: 'Erro ao listar formulários', error });
     }
 };
@@ -60,6 +62,7 @@ export const getFormById = async (req: Request, res: Response) => {
         }
         return res.status(200).json(form);
     } catch (error) {
+        console.error('Erro ao getFormById:', error);
         return res.status(500).json({ message: 'Erro ao buscar formulário', error });
     }
 };
@@ -86,6 +89,7 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit)
         });
     } catch (error) {
+        console.error('Erro ao buscar formulários por evento:', error);
         return res.status(500).json({ message: 'Erro ao buscar formulários por evento', error });
     }
 };
