@@ -33,23 +33,44 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
 };
 
 export const loginUser = async (req: Request, res: Response): Promise<Response> => {
-    const { username, password } = req.body;
+    try {
+        const { username, password } = req.body;
 
-    const user = await User.findOne({ where: { username } });
+        const user = await User.findOne({ where: { username } });
 
-    if (!user) {
-        return res.status(400).json({ message: 'Usuário não encontrado' });
+        if (!user) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            throw new Error('Senha inválida');
+        }
+
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
+            expiresIn: '1h',
+        });
+
+        return res.json({ token });
+    } catch (err) {
+        console.error('Erro ao fazer login:', err);
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+};
+
+export const checkToken = (req: Request, res: Response) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token não fornecido' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-        return res.status(400).json({ message: 'Senha inválida' });
-    }
-
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
-        expiresIn: '1h',
+    jwt.verify(token, process.env.JWT_SECRET as string, (err, decoded: any) => {
+        if (err) {
+            return res.status(401).json({ message: 'Token inválido' });
+        }
+        return res.status(200).json({ valid: true, userId: decoded.userId });
     });
-
-    return res.json({ token });
 };
