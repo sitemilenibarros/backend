@@ -6,6 +6,7 @@ import {
     updateEvent,
     partialUpdateEvent,
     deleteEvent,
+    sendMailToEvent,
 } from '../controllers/events.controller';
 import {
     createStripeProduct,
@@ -25,5 +26,6 @@ eventRoutes.delete('/events/:id', asyncMiddleware(deleteEvent));
 eventRoutes.post('/events/:id/stripe/product', asyncMiddleware(createStripeProduct));
 eventRoutes.post('/events/:id/stripe/price', asyncMiddleware(createStripePrice));
 eventRoutes.post('/events/:id/stripe/checkout', asyncMiddleware(createCheckoutSession));
+eventRoutes.post('/events/:eventId/send-mail', asyncMiddleware(sendMailToEvent));
 
 export default eventRoutes;

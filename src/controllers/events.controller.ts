@@ -115,3 +115,13 @@ export const deleteEvent = async (req: Request, res: Response): Promise<Response
         return res.status(500).json({ message: 'Erro ao deletar evento.' });
     }
 };
+
+export const sendMailToEvent = async (req: Request, res: Response): Promise<Response> => {
+    const { eventId } = req.params;
+    const { content_url } = req.body;
+    if (!content_url) {
+        return res.status(400).json({ message: 'O campo content_url é obrigatório.' });
+    }
+    console.log(`Chamada ao endpoint /events/${eventId}/send-mail com content_url:`, content_url);
+    return res.status(200).json({ message: 'Chamada registrada com sucesso.' });
+};
