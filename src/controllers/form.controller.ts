@@ -7,6 +7,7 @@ const Form = FormFactory(sequelize);
 const Event = EventFactory(sequelize);
 
 export const createForm = async (req: Request, res: Response) => {
+    console.log('[createForm] Recebido:', req.body);
     try {
         const { eventId } = req.params;
         const form_data = req.body;
@@ -21,10 +22,10 @@ export const createForm = async (req: Request, res: Response) => {
             event_id: eventId,
             form_data
         });
-
+        console.log(`[createForm] Formulário criado com ID: ${form.id}`);
         return res.status(201).json(form);
     } catch (error) {
-        console.error('Erro ao salvar formulário:', error);
+        console.error('[createForm] Erro ao salvar formulário:', error);
         return res.status(500).json({ message: 'Erro ao salvar formulário', error });
     }
 };
@@ -40,7 +41,7 @@ export const listForms = async (req: Request, res: Response) => {
             offset,
             order: [['createdAt', 'DESC']]
         });
-
+        console.log(`[listForms] Retornando ${forms.length} formulários, total: ${total}`);
         return res.status(200).json({
             forms,
             total,
@@ -49,28 +50,29 @@ export const listForms = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit)
         });
     } catch (error) {
-        console.error('Erro ao listar formulários:', error);
+        console.error('[listForms] Erro ao listar formulários:', error);
         return res.status(500).json({ message: 'Erro ao listar formulários', error });
     }
 };
 
 export const getFormById = async (req: Request, res: Response) => {
+    const { id } = req.params;
     try {
-        const { id } = req.params;
         const form = await Form.findByPk(id);
         if (!form) {
+            console.warn(`[getFormById] Formulário não encontrado para ID: ${id}`);
             return res.status(404).json({ message: 'Formulário não encontrado.' });
         }
         return res.status(200).json(form);
     } catch (error) {
-        console.error('Erro ao getFormById:', error);
+        console.error('[getFormById] Erro ao buscar formulário:', error);
         return res.status(500).json({ message: 'Erro ao buscar formulário', error });
     }
 };
 
 export const getFormsByEventId = async (req: Request, res: Response) => {
+    const { eventId } = req.params;
     try {
-        const { eventId } = req.params;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const offset = (page - 1) * limit;
@@ -81,7 +83,7 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             limit,
             offset
         });
-
+        console.log(`[getFormsByEventId] Retornando ${forms.length} formulários para evento ID: ${eventId}, total: ${total}`);
         return res.status(200).json({
             forms,
             total,
@@ -90,7 +92,7 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit)
         });
     } catch (error) {
-        console.error('Erro ao buscar formulários por evento:', error);
+        console.error('[getFormsByEventId] Erro ao buscar formulários por evento:', error);
         return res.status(500).json({ message: 'Erro ao buscar formulários por evento', error });
     }
 };
