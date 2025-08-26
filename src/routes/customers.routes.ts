@@ -5,6 +5,7 @@ import {
     stripeWebhook,
 } from '../controllers/customers.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
+import authMiddleware from '../middlewares/authMiddleware';
 
 const customerRoutes = Router();
 
@@ -12,9 +13,9 @@ const customerRoutes = Router();
 customerRoutes.get('/customers', asyncMiddleware(getAllCustomers));
 
 // Endpoint para sincronizar manualmente os compradores de um evento
-customerRoutes.post('/events/:id/sincronizar-compradores', asyncMiddleware(syncEventBuyers));
+customerRoutes.post('/events/:id/sincronizar-compradores', authMiddleware, asyncMiddleware(syncEventBuyers));
 
 // Endpoint de Webhook da Stripe
-customerRoutes.post('/webhooks/stripe', asyncMiddleware(stripeWebhook));
+customerRoutes.post('/webhooks/stripe', authMiddleware, asyncMiddleware(stripeWebhook));
 
 export default customerRoutes;

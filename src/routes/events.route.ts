@@ -13,19 +13,20 @@ import {
     createStripePrice, createCheckoutSession,
 } from '../controllers/stripe.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
+import authMiddleware from '../middlewares/authMiddleware';
 
 const eventRoutes = Router();
 
-eventRoutes.post('/events', asyncMiddleware(createEvent));
+eventRoutes.post('/events', authMiddleware, asyncMiddleware(createEvent));
 eventRoutes.get('/events', asyncMiddleware(getAllEvents));
 eventRoutes.get('/events/:id', asyncMiddleware(getEventById));
-eventRoutes.put('/events/:id', asyncMiddleware(updateEvent));
-eventRoutes.patch('/events/:id', asyncMiddleware(partialUpdateEvent));
-eventRoutes.delete('/events/:id', asyncMiddleware(deleteEvent));
+eventRoutes.put('/events/:id', authMiddleware, asyncMiddleware(updateEvent));
+eventRoutes.patch('/events/:id', authMiddleware, asyncMiddleware(partialUpdateEvent));
+eventRoutes.delete('/events/:id', authMiddleware, asyncMiddleware(deleteEvent));
 
-eventRoutes.post('/events/:id/stripe/product', asyncMiddleware(createStripeProduct));
-eventRoutes.post('/events/:id/stripe/price', asyncMiddleware(createStripePrice));
-eventRoutes.post('/events/:id/stripe/checkout', asyncMiddleware(createCheckoutSession));
-eventRoutes.post('/events/:eventId/send-mail', asyncMiddleware(sendMailToEvent));
+eventRoutes.post('/events/:id/stripe/product', authMiddleware, asyncMiddleware(createStripeProduct));
+eventRoutes.post('/events/:id/stripe/price', authMiddleware, asyncMiddleware(createStripePrice));
+eventRoutes.post('/events/:id/stripe/checkout', authMiddleware, asyncMiddleware(createCheckoutSession));
+eventRoutes.post('/events/:eventId/send-mail', authMiddleware, asyncMiddleware(sendMailToEvent));
 
 export default eventRoutes;
