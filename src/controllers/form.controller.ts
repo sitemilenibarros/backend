@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import sequelize from '../config/db';
 import EventFactory from '../models/events.model';
+import FormFactory from '../models/form.model';
 
-const Form = sequelize.models.Form;
+const Form = FormFactory(sequelize);
 const Event = EventFactory(sequelize);
 
 export const createForm = async (req: Request, res: Response) => {
