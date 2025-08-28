@@ -3,9 +3,19 @@ import EventFactory from '../models/events.model';
 import sequelize from '../config/db';
 import { sendMail } from '../services/email.service';
 import FormFactory from '../models/form.model';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 const Event = EventFactory(sequelize);
 const Form = FormFactory(sequelize);
+
+if (!process.env.MP_ACCESS_TOKEN) {
+    console.error("Erro: A variável de ambiente MP_ACCESS_TOKEN não está definida.");
+    process.exit(1);
+}
+
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN,
+});
 
 export const createEvent = async (req: Request, res: Response): Promise<Response> => {
     console.log('[createEvent] Iniciando criação de evento:', req.body);
@@ -287,4 +297,123 @@ export const sendMailOnsiteToEvent = async (req: Request, res: Response): Promis
 
     console.log(`[sendMailOnsiteToEvent] E-mails enviados com sucesso para evento ${eventId}. Total: ${sentCount}, Falhas: ${failedCount}`);
     return res.status(200).json({ message: 'E-mails enviados com sucesso.', sentCount, failedCount, failedEmails });
+};
+
+export const createMercadoPagoPreference = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        console.log('[createMercadoPagoPreference] Body recebido:', JSON.stringify(req.body));
+        const { eventId, modality } = req.body;
+
+        if (!eventId) {
+            return res.status(400).json({ error: 'ID do evento é obrigatório.' });
+        }
+        if (!modality || !['presencial', 'online'].includes(modality)) {
+            return res.status(400).json({ error: 'Modalidade deve ser "presencial" ou "online".' });
+        }
+
+        const event = await Event.findByPk(eventId);
+        if (!event) {
+            console.warn(`[createMercadoPagoPreference] Evento não encontrado: ${eventId}`);
+            return res.status(404).json({ error: 'Evento não encontrado.' });
+        }
+
+        if (!event.price_value) {
+            return res.status(400).json({ error: 'Evento não possui preço configurado.' });
+        }
+
+        const successUrl = modality === 'presencial'
+            ? 'https://milenibarros.com.br/event-registration'
+            : 'https://milenibarros.com.br/event-registration-online';
+
+        const body: any = {
+            items: [{
+                title: event.title,
+                unit_price: event.price_value / 100,
+                quantity: 1,
+                currency_id: 'BRL',
+                description: event.description || '',
+                id: `evento-${eventId}`,
+            }],
+            external_reference: `evento-${eventId}-${modality}`,
+            back_urls: {
+                success: successUrl,
+                failure: 'https://milenibarros.com.br/payment-denied',
+                pending: 'https://milenibarros.com.br/payment-pending',
+            },
+            auto_return: 'approved',
+            notification_url: 'https://api.milenibarros.com.br/api/webhook/mercadopago',
+            payment_methods: {
+                installments: 12,
+            },
+            metadata: {
+                event_id: eventId,
+                modality: modality,
+                custom_field: `${event.title} - ${modality}`,
+            },
+        };
+
+        const preference = new Preference(client);
+        const result = await preference.create({ body });
+
+        console.log(`[createMercadoPagoPreference] Preferência criada com sucesso. ID: ${result.id}, Init Point: ${result.init_point}`);
+        return res.status(200).json({
+            success: true,
+            id: result.id,
+            init_point: result.init_point,
+            event: {
+                id: event.id,
+                title: event.title,
+                price: event.price_value / 100,
+            },
+            modality: modality,
+        });
+    } catch (error: any) {
+        console.error('[createMercadoPagoPreference] Erro ao criar preferência:', error);
+        const errorMessage = error.cause?.[0]?.description || error.message || 'Erro desconhecido ao criar preferência.';
+        return res.status(500).json({ error: errorMessage });
+    }
+};
+
+export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        console.log('[mercadoPagoWebhook] === INÍCIO DO WEBHOOK ===');
+        console.log('[mercadoPagoWebhook] Headers recebidos:', JSON.stringify(req.headers, null, 2));
+        console.log('[mercadoPagoWebhook] Query params:', JSON.stringify(req.query, null, 2));
+        console.log('[mercadoPagoWebhook] Body recebido:', JSON.stringify(req.body, null, 2));
+        console.log('[mercadoPagoWebhook] Method:', req.method);
+        console.log('[mercadoPagoWebhook] URL:', req.url);
+        console.log('[mercadoPagoWebhook] IP:', req.ip);
+        console.log('[mercadoPagoWebhook] User-Agent:', req.get('User-Agent'));
+
+        const { type, action, data } = req.body;
+
+        if (type) {
+            console.log(`[mercadoPagoWebhook] Tipo de notificação: ${type}`);
+        }
+        if (action) {
+            console.log(`[mercadoPagoWebhook] Ação: ${action}`);
+        }
+        if (data) {
+            console.log(`[mercadoPagoWebhook] Dados da notificação:`, JSON.stringify(data, null, 2));
+        }
+
+        if (data && data.id) {
+            console.log(`[mercadoPagoWebhook] ID do pagamento/recurso: ${data.id}`);
+        }
+
+        const { id, topic } = req.query;
+        if (id) {
+            console.log(`[mercadoPagoWebhook] Query param ID: ${id}`);
+        }
+        if (topic) {
+            console.log(`[mercadoPagoWebhook] Query param Topic: ${topic}`);
+        }
+
+        console.log('[mercadoPagoWebhook] === FIM DO WEBHOOK ===');
+
+        return res.status(200).json({ received: true });
+    } catch (error) {
+        console.error('[mercadoPagoWebhook] Erro no webhook:', error);
+        return res.status(200).json({ received: true, error: 'Erro interno' });
+    }
 };

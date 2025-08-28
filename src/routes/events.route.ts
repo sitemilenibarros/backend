@@ -8,6 +8,8 @@ import {
     deleteEvent,
     sendMailToEvent,
     sendMailOnsiteToEvent,
+    createMercadoPagoPreference,
+    mercadoPagoWebhook,
 } from '../controllers/events.controller';
 import {
     createStripeProduct,
@@ -30,5 +32,8 @@ eventRoutes.post('/events/:id/stripe/price', authMiddleware, asyncMiddleware(cre
 eventRoutes.post('/events/:id/stripe/checkout', authMiddleware, asyncMiddleware(createCheckoutSession));
 eventRoutes.post('/events/:eventId/send-mail', authMiddleware, asyncMiddleware(sendMailToEvent));
 eventRoutes.post('/events/:eventId/send-mail-onsite', authMiddleware, asyncMiddleware(sendMailOnsiteToEvent));
+
+eventRoutes.post('/mercadopago/create-preference', asyncMiddleware(createMercadoPagoPreference));
+eventRoutes.post('/webhook/mercadopago', asyncMiddleware(mercadoPagoWebhook));
 
 export default eventRoutes;
