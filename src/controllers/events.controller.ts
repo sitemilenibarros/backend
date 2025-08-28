@@ -317,8 +317,12 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             return res.status(404).json({ error: 'Evento não encontrado.' });
         }
 
-        if (!event.price_value) {
-            return res.status(400).json({ error: 'Evento não possui preço configurado.' });
+        // Determina o preço baseado na modalidade
+        const priceValue = modality === 'online' ? event.price_value_online : event.price_value_onsite;
+
+        if (!priceValue) {
+            const modalityText = modality === 'online' ? 'online' : 'presencial';
+            return res.status(400).json({ error: `Evento não possui preço configurado para modalidade ${modalityText}.` });
         }
 
         const successUrl = modality === 'presencial'
@@ -328,7 +332,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
         const body: any = {
             items: [{
                 title: event.title,
-                unit_price: event.price_value / 100,
+                unit_price: priceValue / 100,
                 quantity: 1,
                 currency_id: 'BRL',
                 description: event.description || '',
@@ -363,7 +367,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             event: {
                 id: event.id,
                 title: event.title,
-                price: event.price_value / 100,
+                price: priceValue / 100,
             },
             modality: modality,
         });

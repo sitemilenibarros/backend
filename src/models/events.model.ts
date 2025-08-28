@@ -9,8 +9,8 @@ export default (sequelize: Sequelize) => {
         public end_date!: Date;
         public status!: string;
         public category_id!: number;
-        public stripe_product_id?: string;
-        public price_value?: number;
+        public price_value_online?: number;
+        public price_value_onsite?: number;
         public address?: string;
     }
 
@@ -54,12 +54,12 @@ export default (sequelize: Sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
-            stripe_product_id: {
-                type: DataTypes.STRING,
+            price_value_online: {
+                type: DataTypes.INTEGER,
                 allowNull: true,
             },
-            price_value: {
-                type: DataTypes.INTEGER, // Valor do preço em centavos
+            price_value_onsite: {
+                type: DataTypes.INTEGER,
                 allowNull: true,
             },
         },
