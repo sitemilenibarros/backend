@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { logger } from './logger';
 
 // Carrega o esquema do arquivo JSON
 export const loadSchema = (eventSource: string) => {
@@ -8,7 +9,7 @@ export const loadSchema = (eventSource: string) => {
         const schema = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(schema);
     } catch (error) {
-        console.error(`Erro ao carregar o esquema para ${eventSource}:`, error);
+        logger.error('schema_handler', `Erro ao carregar o esquema para ${eventSource}`, error);
         return null;
     }
 };

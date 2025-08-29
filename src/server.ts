@@ -14,6 +14,7 @@ import ebookRoutes from './routes/ebook.routes';
 import assetsRoutes from './routes/assets.routes';
 import eventCategoryRoutes from "./routes/eventCategory.routes";
 import formRoutes from './routes/form.route';
+import { logger } from './utils/logger';
 
 
 dotenv.config();
@@ -38,11 +39,11 @@ app.use('/api/forms', formRoutes);
 
 
 sequelize.authenticate()
-  .then(() => console.log('Conexão com o banco de dados estabelecida com sucesso.'))
-  .catch(err => console.error('Não foi possível conectar ao banco de dados:', err));
+  .then(() => logger.info('startup', 'Conexão com o banco de dados estabelecida com sucesso.'))
+  .catch(err => logger.error('startup', 'Não foi possível conectar ao banco de dados', err));
 
 const PORT = process.env.PORT || '3001';
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  logger.info('startup', `Servidor rodando na porta ${PORT}`);
 });

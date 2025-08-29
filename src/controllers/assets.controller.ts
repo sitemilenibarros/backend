@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { logger } from '../utils/logger';
 
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (
@@ -57,9 +58,9 @@ export const upload = multer({
 });
 
 export const uploadAsset = async (req: Request, res: Response): Promise<Response> => {
-    console.log('[uploadAsset] Iniciando upload de asset');
+    logger.info('uploadAsset', 'Iniciando upload de asset');
     if (!req.file) {
-        console.warn('[uploadAsset] Nenhum arquivo enviado');
+        logger.warn('uploadAsset', 'Nenhum arquivo enviado');
         return res.status(400).json({ message: 'Nenhum arquivo de imagem ou vídeo enviado.' });
     }
     let assetUrl: string;
@@ -68,9 +69,9 @@ export const uploadAsset = async (req: Request, res: Response): Promise<Response
         assetUrl = dir
             ? `${req.protocol}://${req.get('host')}/assets/uploads/${dir}/${req.file.filename}`
             : `${req.protocol}://${req.get('host')}/assets/uploads/${req.file.filename}`;
-        console.log(`[uploadAsset] Asset salvo em: ${assetUrl}`);
+        logger.info('uploadAsset', 'Asset salvo em:', assetUrl);
     } catch (e) {
-        console.error('[uploadAsset] Diretório inválido:', e);
+        logger.error('uploadAsset', 'Diretório inválido:', e);
         return res.status(400).json({ message: 'Diretório inválido no header X-Asset-Directory.' });
     }
     return res.status(201).json({
@@ -82,7 +83,7 @@ export const uploadAsset = async (req: Request, res: Response): Promise<Response
 export const deleteAsset = async (req: Request, res: Response): Promise<Response> => {
     const { filename } = req.params;
     let assetPath = path.join(__dirname, '../assets/uploads');
-    console.log(`[deleteAsset] Tentando deletar asset: ${filename}`);
+    logger.info('deleteAsset', 'Tentando deletar asset:', filename);
     try {
         const dir = getValidatedDirectory(req);
         if (dir) {
@@ -92,32 +93,32 @@ export const deleteAsset = async (req: Request, res: Response): Promise<Response
         }
         await fs.promises.access(assetPath, fs.constants.F_OK);
         await fs.promises.unlink(assetPath);
-        console.log(`[deleteAsset] Asset ${filename} deletado com sucesso.`);
+        logger.info('deleteAsset', `Asset ${filename} deletado com sucesso.`);
         return res.status(200).json({ message: `Asset ${filename} deletado com sucesso.` });
     } catch (err: any) {
         if (err.message === 'Diretório inválido.') {
-            console.error('[deleteAsset] Diretório inválido:', err);
+            logger.error('deleteAsset', 'Diretório inválido:', err);
             return res.status(400).json({ message: 'Diretório inválido no header X-Asset-Directory.' });
         }
         if (err.code === 'ENOENT') {
-            console.warn(`[deleteAsset] Asset não encontrado: ${filename}`);
+            logger.warn('deleteAsset', `Asset não encontrado: ${filename}`);
             return res.status(404).json({ message: 'Asset não encontrado.' });
         }
-        console.error('[deleteAsset] Erro ao deletar asset:', err);
+        logger.error('deleteAsset', 'Erro ao deletar asset:', err);
         return res.status(500).json({ message: 'Erro ao deletar o asset.' });
     }
 };
 
 export const listAssets = async (req: Request, res: Response): Promise<Response> => {
     let assetsDir = path.join(__dirname, '../assets/uploads');
-    console.log('[listAssets] Listando assets');
+    logger.info('listAssets', 'Listando assets');
     try {
         const dir = getValidatedDirectory(req);
         if (dir) {
             assetsDir = path.join(assetsDir, dir);
         }
         const files = await fs.promises.readdir(assetsDir);
-        console.log(`[listAssets] Encontrados ${files.length} arquivos no diretório ${assetsDir}`);
+        logger.info('listAssets', `Encontrados ${files.length} arquivos no diretório`, assetsDir);
 
         const filesWithStats = await Promise.all(
             files.map(async (file) => {
@@ -149,14 +150,14 @@ export const listAssets = async (req: Request, res: Response): Promise<Response>
         return res.status(200).json(responseData);
     } catch (err: any) {
         if (err.message === 'Diretório inválido.') {
-            console.error('[listAssets] Diretório inválido:', err);
+            logger.error('listAssets', 'Diretório inválido:', err);
             return res.status(400).json({ message: 'Diretório inválido no header X-Asset-Directory.' });
         }
         if (err.code === 'ENOENT') {
-            console.warn('[listAssets] Diretório não encontrado:', assetsDir);
+            logger.warn('listAssets', 'Diretório não encontrado:', assetsDir);
             return res.status(404).json({ message: 'Diretório não encontrado.' });
         }
-        console.error('[listAssets] Erro ao listar assets:', err);
+        logger.error('listAssets', 'Erro ao listar assets:', err);
         return res.status(500).json({ message: 'Erro ao listar os assets.' });
     }
 };

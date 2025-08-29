@@ -4,12 +4,13 @@ import sequelize from '../config/db';
 import { sendMail } from '../services/email.service';
 import FormFactory from '../models/form.model';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { logger } from '../utils/logger';
 
 const Event = EventFactory(sequelize);
 const Form = FormFactory(sequelize);
 
 if (!process.env.MP_ACCESS_TOKEN) {
-    console.error("Erro: A variável de ambiente MP_ACCESS_TOKEN não está definida.");
+    logger.error('startup', 'A variável de ambiente MP_ACCESS_TOKEN não está definida.');
     process.exit(1);
 }
 
@@ -18,19 +19,19 @@ const client = new MercadoPagoConfig({
 });
 
 export const createEvent = async (req: Request, res: Response): Promise<Response> => {
-    console.log('[createEvent] Iniciando criação de evento:', req.body);
+    logger.info('createEvent', 'Iniciando criação de evento', req.body);
     try {
         const newEvent = await Event.create(req.body);
-        console.log('[createEvent] Evento criado com sucesso:', newEvent.toJSON());
+        logger.info('createEvent', 'Evento criado com sucesso', newEvent.toJSON());
         return res.status(201).json(newEvent.toJSON());
     } catch (err: any) {
-        console.error('[createEvent] Erro ao criar evento:', err);
+        logger.error('createEvent', 'Erro ao criar evento', err);
         return res.status(500).json({ message: 'Erro ao criar evento.' });
     }
 };
 
 export const getAllEvents = async (req: Request, res: Response): Promise<Response> => {
-    console.log('[getAllEvents] Buscando todos os eventos. Query:', req.query);
+    logger.info('getAllEvents', 'Buscando todos os eventos', req.query);
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
@@ -43,7 +44,7 @@ export const getAllEvents = async (req: Request, res: Response): Promise<Respons
         });
 
         const eventsList = events.map((e: any) => e.toJSON());
-        console.log(`[getAllEvents] Eventos encontrados: ${eventsList.length}, Total: ${total}`);
+        logger.info('getAllEvents', `Eventos encontrados: ${eventsList.length}, Total: ${total}`);
         return res.status(200).json({
             events: eventsList,
             total,
@@ -52,26 +53,26 @@ export const getAllEvents = async (req: Request, res: Response): Promise<Respons
             totalPages: Math.ceil(total / limit)
         });
     } catch (err) {
-        console.error('[getAllEvents] Erro ao listar eventos:', err);
+        logger.error('getAllEvents', 'Erro ao listar eventos', err);
         return res.status(500).json({ message: 'Erro ao listar eventos.' });
     }
 };
 
 export const getEventById = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
-    console.log(`[getEventById] Buscando evento por ID: ${id}`);
+    logger.info('getEventById', 'Buscando evento por ID', id);
     try {
         const eventFound = await Event.findByPk(id);
 
         if (!eventFound) {
-            console.warn(`[getEventById] Evento não encontrado: ${id}`);
+            logger.warn('getEventById', 'Evento não encontrado', id);
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
-        console.log('[getEventById] Evento encontrado:', eventFound.toJSON());
+        logger.info('getEventById', 'Evento encontrado', eventFound.toJSON());
         return res.status(200).json(eventFound.toJSON());
     } catch (err) {
-        console.error('[getEventById] Erro ao buscar evento:', err);
+        logger.error('getEventById', 'Erro ao buscar evento', err);
         return res.status(500).json({ message: 'Erro ao buscar evento.' });
     }
 };
@@ -79,22 +80,22 @@ export const getEventById = async (req: Request, res: Response): Promise<Respons
 export const updateEvent = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     const updates = req.body;
-    console.log(`[updateEvent] Atualizando evento ID: ${id} com dados:`, updates);
+    logger.info('updateEvent', 'Atualizando evento', { id, updates });
     try {
         const [updated] = await Event.update(updates, {
             where: { id },
         });
 
         if (updated === 0) {
-            console.warn(`[updateEvent] Evento não encontrado para atualização: ${id}`);
+            logger.warn('updateEvent', 'Evento não encontrado para atualização', id);
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
         const updatedEvent = await Event.findByPk(id);
-        console.log('[updateEvent] Evento atualizado:', updatedEvent?.toJSON());
+        logger.info('updateEvent', 'Evento atualizado', updatedEvent?.toJSON());
         return res.status(200).json(updatedEvent?.toJSON());
     } catch (err) {
-        console.error('[updateEvent] Erro ao atualizar evento:', err);
+        logger.error('updateEvent', 'Erro ao atualizar evento', err);
         return res.status(500).json({ message: 'Erro ao atualizar evento.' });
     }
 };
@@ -102,41 +103,41 @@ export const updateEvent = async (req: Request, res: Response): Promise<Response
 export const partialUpdateEvent = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     const updates = req.body;
-    console.log(`[partialUpdateEvent] Atualização parcial do evento ID: ${id} com dados:`, updates);
+    logger.info('partialUpdateEvent', 'Atualização parcial do evento', { id, updates });
     try {
         const event = await Event.findByPk(id);
 
         if (!event) {
-            console.warn(`[partialUpdateEvent] Evento não encontrado para atualização parcial: ${id}`);
+            logger.warn('partialUpdateEvent', 'Evento não encontrado para atualização parcial', id);
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
         const updatedEvent = await event.update(updates);
-        console.log('[partialUpdateEvent] Evento parcialmente atualizado:', updatedEvent.toJSON());
+        logger.info('partialUpdateEvent', 'Evento parcialmente atualizado', updatedEvent.toJSON());
         return res.status(200).json(updatedEvent.toJSON());
     } catch (err) {
-        console.error('[partialUpdateEvent] Erro ao atualizar evento parcialmente:', err);
+        logger.error('partialUpdateEvent', 'Erro ao atualizar evento parcialmente', err);
         return res.status(500).json({ message: 'Erro ao atualizar evento parcialmente.' });
     }
 };
 
 export const deleteEvent = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
-    console.log(`[deleteEvent] Deletando evento ID: ${id}`);
+    logger.info('deleteEvent', 'Deletando evento', id);
     try {
         const deletedRows = await Event.destroy({
             where: { id },
         });
 
         if (deletedRows === 0) {
-            console.warn(`[deleteEvent] Evento não encontrado para deleção: ${id}`);
+            logger.warn('deleteEvent', 'Evento não encontrado para deleção', id);
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
-        console.log(`[deleteEvent] Evento deletado com sucesso. ID: ${id}`);
+        logger.info('deleteEvent', 'Evento deletado com sucesso', id);
         return res.status(200).json({ message: 'Evento deletado com sucesso!' });
     } catch (err) {
-        console.error('[deleteEvent] Erro ao deletar evento:', err);
+        logger.error('deleteEvent', 'Erro ao deletar evento', err);
         return res.status(500).json({ message: 'Erro ao deletar evento.' });
     }
 };
@@ -145,18 +146,18 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
     const { eventId } = req.params;
     const { content_url } = req.body;
 
-    console.log(`[sendMailToEvent] Iniciando envio de e-mails para evento ${eventId}`);
+    logger.info('sendMailToEvent', 'Iniciando envio de e-mails', { eventId });
     const event = await Event.findByPk(eventId);
     if (!event) {
-        console.warn(`[sendMailToEvent] Evento não encontrado: ${eventId}`);
+        logger.warn('sendMailToEvent', 'Evento não encontrado', eventId);
         return res.status(404).json({ message: 'Evento não encontrado.' });
     }
 
     const forms = await Form.findAll({ where: { event_id: eventId } });
-    console.log(`[sendMailToEvent] Total de forms encontrados: ${forms.length}`);
+    logger.info('sendMailToEvent', 'Forms encontrados', forms.length);
 
     const bccList = (process.env.GMAIL_BCC || '').split(',').map(e => e.trim()).filter(e => !!e);
-    console.log(`[sendMailToEvent] E-mails de cópia oculta (BCC):`, bccList);
+    logger.debug('sendMailToEvent', 'BCC list', bccList);
 
     let sentCount = 0;
     let failedCount = 0;
@@ -204,36 +205,36 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
             });
             sentCount++;
         } catch (err) {
-            console.error(`[sendMailToEvent] Erro ao enviar e-mail para ${email}:`, err);
+            logger.error('sendMailToEvent', 'Erro ao enviar e-mail', { email, err });
             failedCount++;
             failedEmails.push(email);
         }
     }
 
     if (sentCount === 0) {
-        console.warn(`[sendMailToEvent] Nenhum e-mail enviado com sucesso para evento ${eventId}`);
+        logger.warn('sendMailToEvent', 'Nenhum e-mail enviado com sucesso', { eventId });
         return res.status(400).json({ message: 'Nenhum e-mail enviado com sucesso.', failedEmails });
     }
 
-    console.log(`[sendMailToEvent] E-mails enviados com sucesso para evento ${eventId}. Total: ${sentCount}, Falhas: ${failedCount}`);
+    logger.info('sendMailToEvent', 'Envio concluído', { eventId, sentCount, failedCount });
     return res.status(200).json({ message: 'E-mails enviados com sucesso.', sentCount, failedCount, failedEmails });
 };
 
 export const sendMailOnsiteToEvent = async (req: Request, res: Response): Promise<Response> => {
     const { eventId } = req.params;
 
-    console.log(`[sendMailOnsiteToEvent] Iniciando envio de e-mails presenciais para evento ${eventId}`);
+    logger.info('sendMailOnsiteToEvent', 'Iniciando envio de e-mails presenciais', { eventId });
     const event = await Event.findByPk(eventId);
     if (!event) {
-        console.warn(`[sendMailOnsiteToEvent] Evento não encontrado: ${eventId}`);
+        logger.warn('sendMailOnsiteToEvent', 'Evento não encontrado', eventId);
         return res.status(404).json({ message: 'Evento não encontrado.' });
     }
 
     const forms = await Form.findAll({ where: { event_id: eventId } });
-    console.log(`[sendMailOnsiteToEvent] Total de forms encontrados: ${forms.length}`);
+    logger.info('sendMailOnsiteToEvent', 'Forms encontrados', forms.length);
 
     const bccList = (process.env.GMAIL_BCC || '').split(',').map(e => e.trim()).filter(e => !!e);
-    console.log(`[sendMailOnsiteToEvent] E-mails de cópia oculta (BCC):`, bccList);
+    logger.debug('sendMailOnsiteToEvent', 'BCC list', bccList);
 
     let sentCount = 0;
     let failedCount = 0;
@@ -284,24 +285,24 @@ export const sendMailOnsiteToEvent = async (req: Request, res: Response): Promis
             });
             sentCount++;
         } catch (err) {
-            console.error(`[sendMailOnsiteToEvent] Erro ao enviar e-mail para ${email}:`, err);
+            logger.error('sendMailOnsiteToEvent', 'Erro ao enviar e-mail', { email, err });
             failedCount++;
             failedEmails.push(email);
         }
     }
 
     if (sentCount === 0) {
-        console.warn(`[sendMailOnsiteToEvent] Nenhum e-mail enviado com sucesso para evento ${eventId}`);
+        logger.warn('sendMailOnsiteToEvent', 'Nenhum e-mail enviado com sucesso', { eventId });
         return res.status(400).json({ message: 'Nenhum e-mail enviado com sucesso.', failedEmails });
     }
 
-    console.log(`[sendMailOnsiteToEvent] E-mails enviados com sucesso para evento ${eventId}. Total: ${sentCount}, Falhas: ${failedCount}`);
+    logger.info('sendMailOnsiteToEvent', 'Envio concluído', { eventId, sentCount, failedCount });
     return res.status(200).json({ message: 'E-mails enviados com sucesso.', sentCount, failedCount, failedEmails });
 };
 
 export const createMercadoPagoPreference = async (req: Request, res: Response): Promise<Response> => {
     try {
-        console.log('[createMercadoPagoPreference] Body recebido:', JSON.stringify(req.body));
+        logger.info('createMercadoPagoPreference', 'Body recebido', req.body);
         const { eventId, modality } = req.body;
 
         if (!eventId) {
@@ -313,11 +314,10 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
 
         const event = await Event.findByPk(eventId);
         if (!event) {
-            console.warn(`[createMercadoPagoPreference] Evento não encontrado: ${eventId}`);
+            logger.warn('createMercadoPagoPreference', 'Evento não encontrado', eventId);
             return res.status(404).json({ error: 'Evento não encontrado.' });
         }
 
-        // Determina o preço baseado na modalidade
         const priceValue = modality === 'online' ? event.price_value_online : event.price_value_onsite;
 
         if (!priceValue) {
@@ -359,7 +359,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
         const preference = new Preference(client);
         const result = await preference.create({ body });
 
-        console.log(`[createMercadoPagoPreference] Preferência criada com sucesso. ID: ${result.id}, Init Point: ${result.init_point}`);
+        logger.info('createMercadoPagoPreference', 'Preferência criada', { id: result.id, init_point: result.init_point });
         return res.status(200).json({
             success: true,
             id: result.id,
@@ -372,7 +372,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             modality: modality,
         });
     } catch (error: any) {
-        console.error('[createMercadoPagoPreference] Erro ao criar preferência:', error);
+        logger.error('createMercadoPagoPreference', 'Erro ao criar preferência', error);
         const errorMessage = error.cause?.[0]?.description || error.message || 'Erro desconhecido ao criar preferência.';
         return res.status(500).json({ error: errorMessage });
     }
@@ -380,44 +380,27 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
 
 export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<Response> => {
     try {
-        console.log('[mercadoPagoWebhook] === INÍCIO DO WEBHOOK ===');
-        console.log('[mercadoPagoWebhook] Headers recebidos:', JSON.stringify(req.headers, null, 2));
-        console.log('[mercadoPagoWebhook] Query params:', JSON.stringify(req.query, null, 2));
-        console.log('[mercadoPagoWebhook] Body recebido:', JSON.stringify(req.body, null, 2));
-        console.log('[mercadoPagoWebhook] Method:', req.method);
-        console.log('[mercadoPagoWebhook] URL:', req.url);
-        console.log('[mercadoPagoWebhook] IP:', req.ip);
-        console.log('[mercadoPagoWebhook] User-Agent:', req.get('User-Agent'));
+        logger.debug('mercadoPagoWebhook', 'INICIO WEBHOOK');
+        logger.debug('mercadoPagoWebhook', 'Headers', req.headers);
+        logger.debug('mercadoPagoWebhook', 'Query params', req.query);
+        logger.debug('mercadoPagoWebhook', 'Body', req.body);
+        logger.debug('mercadoPagoWebhook', 'Method/URL/IP/UA', { method: req.method, url: req.url, ip: req.ip, ua: req.get('User-Agent') });
 
         const { type, action, data } = req.body;
 
-        if (type) {
-            console.log(`[mercadoPagoWebhook] Tipo de notificação: ${type}`);
-        }
-        if (action) {
-            console.log(`[mercadoPagoWebhook] Ação: ${action}`);
-        }
-        if (data) {
-            console.log(`[mercadoPagoWebhook] Dados da notificação:`, JSON.stringify(data, null, 2));
-        }
+        if (type) logger.info('mercadoPagoWebhook', 'Tipo notificação', type);
+        if (action) logger.info('mercadoPagoWebhook', 'Ação', action);
+        if (data) logger.debug('mercadoPagoWebhook', 'Dados notificação', data);
+        if (data && data.id) logger.info('mercadoPagoWebhook', 'ID pagamento/recurso', data.id);
 
-        if (data && data.id) {
-            console.log(`[mercadoPagoWebhook] ID do pagamento/recurso: ${data.id}`);
-        }
+        const { id, topic } = req.query as any;
+        if (id) logger.debug('mercadoPagoWebhook', 'Query param ID', id);
+        if (topic) logger.debug('mercadoPagoWebhook', 'Query param Topic', topic);
 
-        const { id, topic } = req.query;
-        if (id) {
-            console.log(`[mercadoPagoWebhook] Query param ID: ${id}`);
-        }
-        if (topic) {
-            console.log(`[mercadoPagoWebhook] Query param Topic: ${topic}`);
-        }
-
-        console.log('[mercadoPagoWebhook] === FIM DO WEBHOOK ===');
-
+        logger.debug('mercadoPagoWebhook', 'FIM WEBHOOK');
         return res.status(200).json({ received: true });
     } catch (error) {
-        console.error('[mercadoPagoWebhook] Erro no webhook:', error);
+        logger.error('mercadoPagoWebhook', 'Erro no webhook', error);
         return res.status(200).json({ received: true, error: 'Erro interno' });
     }
 };

@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { logger } from '../utils/logger';
 
 dotenv.config();
 
@@ -26,16 +27,15 @@ fs.readdirSync(modelsPath).forEach((file) => {
 
 sequelize.sync()
   .then(() => {
-    console.log('Banco de dados sincronizado com sucesso!');
-    // Logar os modelos e tabelas criadas
-    console.log('Modelos sincronizados:', Object.keys(sequelize.models));
+    logger.info('db', 'Banco de dados sincronizado com sucesso!');
+    logger.debug('db', 'Modelos sincronizados', Object.keys(sequelize.models));
     Object.keys(sequelize.models).forEach(modelName => {
       const model = sequelize.models[modelName];
-      console.log(`Tabela do modelo ${modelName}:`, model.tableName);
+      logger.debug('db', 'Tabela do modelo', { modelName, table: model.tableName });
     });
   })
   .catch(err => {
-    console.error('Erro ao sincronizar o banco de dados:', err);
+    logger.error('db', 'Erro ao sincronizar o banco de dados', err);
   });
 
 export default sequelize;
