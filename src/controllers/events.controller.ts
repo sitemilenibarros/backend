@@ -345,7 +345,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
                 pending: 'https://milenibarros.com.br/payment-pending',
             },
             auto_return: 'approved',
-            notification_url: 'https://api.milenibarros.com.br/api/webhook/mercadopago',
+            notification_url: 'https://banco-frontendo.b2elt1.easypanel.host/api/webhook/mercadopago',
             payment_methods: {
                 installments: 12,
             },
