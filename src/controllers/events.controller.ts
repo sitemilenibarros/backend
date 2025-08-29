@@ -380,11 +380,11 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
 
 export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<Response> => {
     try {
-        logger.debug('mercadoPagoWebhook', 'INICIO WEBHOOK');
-        logger.debug('mercadoPagoWebhook', 'Headers', req.headers);
-        logger.debug('mercadoPagoWebhook', 'Query params', req.query);
-        logger.debug('mercadoPagoWebhook', 'Body', req.body);
-        logger.debug('mercadoPagoWebhook', 'Method/URL/IP/UA', { method: req.method, url: req.url, ip: req.ip, ua: req.get('User-Agent') });
+        logger.info('mercadoPagoWebhook', 'INICIO WEBHOOK');
+        logger.info('mercadoPagoWebhook', 'Headers', req.headers);
+        logger.info('mercadoPagoWebhook', 'Query params', req.query);
+        logger.info('mercadoPagoWebhook', 'Body', req.body);
+        logger.info('mercadoPagoWebhook', 'Method/URL/IP/UA', { method: req.method, url: req.url, ip: req.ip, ua: req.get('User-Agent') });
 
         const { type, action, data } = req.body;
 
