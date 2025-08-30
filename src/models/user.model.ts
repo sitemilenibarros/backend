@@ -1,10 +1,10 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
-// Modelo de Usuário (para autenticação)
 export default (sequelize: Sequelize) => {
     class User extends Model {
         public id!: number;
         public username!: string;
+        public email!: string | null;
         public password!: string;
     }
 
@@ -14,6 +14,14 @@ export default (sequelize: Sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: false,
                 unique: true,
+            },
+            email: {
+                type: DataTypes.STRING,
+                allowNull: true,
+                unique: true,
+                validate: {
+                    isEmail: true,
+                }
             },
             password: {
                 type: DataTypes.STRING,
