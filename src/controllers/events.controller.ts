@@ -312,6 +312,21 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             return res.status(400).json({ error: 'Modalidade deve ser "presencial" ou "online".' });
         }
 
+        if (modality === 'presencial') {
+            const presencialCount = await Form.count({
+                where: {
+                    event_id: eventId,
+                    // @ts-ignore
+                    // Para Postgres: form_data->>'modality' = 'presencial'
+                    [sequelize.literal("form_data->>'modality'")]: 'presencial'
+                }
+            });
+            logger.info('createMercadoPagoPreference', 'Inscrições presenciais encontradas', { eventId, presencialCount });
+            if (presencialCount >= 36) {
+                return res.status(400).json({ error: 'Limite de 36 inscrições presenciais atingido para este evento.' });
+            }
+        }
+
         const event = await Event.findByPk(eventId);
         if (!event) {
             logger.warn('createMercadoPagoPreference', 'Evento não encontrado', eventId);
