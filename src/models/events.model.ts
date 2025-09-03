@@ -14,6 +14,7 @@ export default (sequelize: Sequelize) => {
         public from_price_value_online?: number;
         public from_price_value_onsite?: number;
         public address?: string;
+        public limit_onsite_slots?: number;
     }
 
     Event.init(
@@ -69,6 +70,10 @@ export default (sequelize: Sequelize) => {
                 allowNull: true,
             },
             from_price_value_onsite: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            },
+            limit_onsite_slots: {
                 type: DataTypes.INTEGER,
                 allowNull: true,
             },
