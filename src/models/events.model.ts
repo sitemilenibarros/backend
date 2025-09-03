@@ -11,6 +11,8 @@ export default (sequelize: Sequelize) => {
         public category_id!: number;
         public price_value_online?: number;
         public price_value_onsite?: number;
+        public from_price_value_online?: number;
+        public from_price_value_onsite?: number;
         public address?: string;
     }
 
@@ -59,6 +61,14 @@ export default (sequelize: Sequelize) => {
                 allowNull: true,
             },
             price_value_onsite: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            },
+            from_price_value_online: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            },
+            from_price_value_onsite: {
                 type: DataTypes.INTEGER,
                 allowNull: true,
             },
