@@ -5,6 +5,7 @@ import { sendMail } from '../services/email.service';
 import FormFactory from '../models/form.model';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { logger } from '../utils/logger';
+import {Op, QueryTypes, Sequelize} from "sequelize";
 
 const Event = EventFactory(sequelize);
 const Form = FormFactory(sequelize);
@@ -319,13 +320,14 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
         }
 
         if (modality === 'presencial') {
-            const presencialCount = await Form.count({
-                where: {
-                    event_id: eventId,
-                    // @ts-ignore
-                    [sequelize.literal("form_data->>'modality'")]: 'presencial'
-                }
-            });
+            const [result] = await sequelize.query(
+                `SELECT count(*) AS count
+                       FROM forms
+                       WHERE event_id = :eventId
+                         AND form_data->>'modality' = 'presencial'`,
+                { replacements: { eventId }, type: QueryTypes.SELECT }
+            );
+            const presencialCount = parseInt((result as any).count, 10) || 0;
             logger.info('createMercadoPagoPreference', 'Inscrições presenciais encontradas', { eventId, presencialCount });
             const limit = event.limit_onsite_slots ?? 36;
             if (presencialCount >= limit) {
