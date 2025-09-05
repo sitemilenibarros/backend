@@ -15,6 +15,7 @@ import assetsRoutes from './routes/assets.routes';
 import eventCategoryRoutes from "./routes/eventCategory.routes";
 import formRoutes from './routes/form.route';
 import { logger } from './utils/logger';
+import userRoutes from "./routes/user.routes";
 
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use(express.json());
 serveStaticFiles(app);
 
 app.use('/api/auth', authRoutes);
+app.use('/api', userRoutes);
 app.use('/api', eventsPagesRoutes);
 app.use('/api', eventsRouter)
 app.use('/api', serviceRouter);
