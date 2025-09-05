@@ -5,6 +5,7 @@ export default (sequelize: Sequelize) => {
         public id!: number;
         public event_id!: number;
         public schema_json!: object;
+        public modality!: string;
     }
 
     FormSchema.init(
@@ -17,11 +18,17 @@ export default (sequelize: Sequelize) => {
             event_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
-                unique: true,
             },
             schema_json: {
                 type: DataTypes.JSONB,
                 allowNull: false,
+            },
+            modality: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                validate: {
+                    isIn: [['online', 'presencial']]
+                }
             },
         },
         {
@@ -29,9 +36,14 @@ export default (sequelize: Sequelize) => {
             modelName: 'FormSchema',
             tableName: 'form_schemas',
             timestamps: true,
+            indexes: [
+                {
+                    unique: true,
+                    fields: ['event_id', 'modality']
+                }
+            ]
         }
     );
 
     return FormSchema;
 };
-
