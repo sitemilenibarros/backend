@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from './logger';
 
-// Carrega o esquema do arquivo JSON
+
 export const loadSchema = (eventSource: string) => {
     try {
         const filePath = path.join(__dirname, `../event_schemas/${eventSource}_schema.json`);
@@ -14,7 +14,7 @@ export const loadSchema = (eventSource: string) => {
     }
 };
 
-// Preenche um evento com base no esquema de referência
+
 export const hydrateEventWithSchema = (eventSource: string, eventData: any) => {
     const schema = loadSchema(eventSource);
     if (!schema) {
@@ -23,12 +23,11 @@ export const hydrateEventWithSchema = (eventSource: string, eventData: any) => {
 
     const hydratedData: any = {};
     for (const key in schema.fields) {
-        //const field = schema.fields[key];
-        // Se o campo existe no evento, use-o; senão, use o valor padrão do esquema
+
         if (eventData && eventData[key] !== undefined) {
             hydratedData[key] = eventData[key];
         } else {
-            hydratedData[key] = null; // Ou field.default
+            hydratedData[key] = null;
         }
     }
     return hydratedData;
@@ -96,3 +95,50 @@ export const validateEventPageData = (eventSource: string, data: any) => {
 
     return { isValid: errors.length === 0, errors };
 };
+
+export type FormFieldSchema = {
+    name: string;
+    type: string;
+    options?: string[];
+    required?: boolean;
+    label?: string;
+    [key: string]: any;
+};
+
+export function validateFormSchema(schema: any): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    if (!Array.isArray(schema)) {
+        errors.push('Schema deve ser um array de campos.');
+        return { valid: false, errors };
+    }
+    schema.forEach((field, idx) => {
+        if (typeof field !== 'object' || field === null) {
+            errors.push(`Campo na posição ${idx} não é um objeto.`);
+            return;
+        }
+        if (typeof field.name !== 'string' || !field.name.trim()) {
+            errors.push(`Campo na posição ${idx} está sem nome válido.`);
+        }
+        if (typeof field.type !== 'string' || !field.type.trim()) {
+            errors.push(`Campo na posição ${idx} está sem tipo válido.`);
+        }
+        if (field.type === 'select' && (!Array.isArray(field.options) || field.options.length === 0)) {
+            errors.push(`Campo '${field.name}' na posição ${idx} do tipo 'select' precisa de opções.`);
+        }
+    });
+    return { valid: errors.length === 0, errors };
+}
+
+export const exampleSchemas = [
+    [
+        { name: 'age', type: 'select', options: ['18-24', '25-34', '35-44'], required: true, label: 'Idade' },
+        { name: 'email', type: 'email', required: true, label: 'E-mail' },
+        { name: 'modality', type: 'select', options: ['presencial', 'online'], required: true, label: 'Modalidade' }
+    ],
+    [
+        { name: 'name', type: 'text', required: true, label: 'Nome completo' },
+        { name: 'phone', type: 'tel', required: false, label: 'Telefone' },
+        { name: 'imageConsent', type: 'checkbox', required: false, label: 'Autoriza uso de imagem?' }
+    ]
+];
+

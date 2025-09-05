@@ -14,6 +14,7 @@ import ebookRoutes from './routes/ebook.routes';
 import assetsRoutes from './routes/assets.routes';
 import eventCategoryRoutes from "./routes/eventCategory.routes";
 import formRoutes from './routes/form.route';
+import formSchemaRoutes from './routes/formSchema.route';
 import { logger } from './utils/logger';
 import userRoutes from "./routes/user.routes";
 
@@ -38,6 +39,7 @@ app.use('/api/ebooks', ebookRoutes);
 app.use('/api/assets', assetsRoutes);
 app.use('/api/event-categories', eventCategoryRoutes);
 app.use('/api/forms', formRoutes);
+app.use('/api/form-schema', formSchemaRoutes);
 
 
 sequelize.authenticate()
