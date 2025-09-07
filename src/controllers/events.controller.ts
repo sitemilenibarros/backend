@@ -342,9 +342,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             return res.status(400).json({ error: `Evento não possui preço configurado para modalidade ${modalityText}.` });
         }
 
-        const successUrl = modality === 'presencial'
-            ? 'https://milenibarros.com.br/event-registration'
-            : 'https://milenibarros.com.br/event-registration-online';
+        const successUrl = `https://milenibarros.com.br/form-event/${event.id}/${modality}`;
 
         const body: any = {
             items: [{
