@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, loginUser, checkToken, requestPasswordReset, verifyResetCode, resetPassword } from '../controllers/auth.controller';
+import { registerUser, loginUser, checkToken, requestPasswordReset, verifyResetCode, resetPassword, changePassword } from '../controllers/auth.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
 import authMiddleware from '../middlewares/authMiddleware';
 
@@ -11,5 +11,6 @@ authRoutes.get('/check-token', authMiddleware, asyncMiddleware(checkToken));
 authRoutes.post('/forgot-password', asyncMiddleware(requestPasswordReset));
 authRoutes.post('/verify-reset-code', asyncMiddleware(verifyResetCode));
 authRoutes.post('/reset-password', asyncMiddleware(resetPassword));
+authRoutes.post('/change-password', authMiddleware, asyncMiddleware(changePassword));
 
 export default authRoutes;

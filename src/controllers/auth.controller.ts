@@ -198,3 +198,35 @@ export const resetPassword = async (req: Request, res: Response): Promise<Respon
         return res.status(500).json({ message: 'Erro interno do servidor' });
     }
 };
+
+export const changePassword = async (req: any, res: Response): Promise<Response> => {
+    try {
+        const _user = req.user;
+        if (!_user || !_user.userId) {
+            return res.status(401).json({ error: 'Não autorizado' });
+        }
+        const userId = _user.userId;
+        const { currentPassword, newPassword } = req.body;
+        if (!userId) {
+            return res.status(401).json({ message: 'Não autenticado' });
+        }
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Senha atual e nova são obrigatórias' });
+        }
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Senha atual incorreta' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await user.update({ password: hashedPassword });
+        logger.info('changePassword', 'Senha alterada com sucesso para:', user.email);
+        return res.status(200).json({ message: 'Senha alterada com sucesso' });
+    } catch (err) {
+        logger.error('changePassword', 'Erro ao alterar senha:', err);
+        return res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+};
