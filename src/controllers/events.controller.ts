@@ -363,7 +363,7 @@ export const createMercadoPagoPreference = async (req: Request, res: Response): 
             notification_url: 'https://api.milenibarros.com.br/api/webhook/mercadopago',
             payment_methods: {
                 installments: 12,
-                excluded_payment_methods: [{ id: 'ticket' }],
+                excluded_payment_types: [{ id: 'ticket' }],
             },
             metadata: {
                 event_id: eventId,
