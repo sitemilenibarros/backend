@@ -67,8 +67,8 @@ export const uploadAsset = async (req: Request, res: Response): Promise<Response
     try {
         const dir = getValidatedDirectory(req);
         assetUrl = dir
-            ? `${req.protocol}://${req.get('host')}/assets/uploads/${dir}/${req.file.filename}`
-            : `${req.protocol}://${req.get('host')}/assets/uploads/${req.file.filename}`;
+            ? `${req.protocol}://${req.get('host')}/backend/assets/uploads/${dir}/${req.file.filename}`
+            : `${req.protocol}://${req.get('host')}/backend/assets/uploads/${req.file.filename}`;
         logger.info('uploadAsset', 'Asset salvo em:', assetUrl);
     } catch (e) {
         logger.error('uploadAsset', 'Diretório inválido:', e);
@@ -138,8 +138,8 @@ export const listAssets = async (req: Request, res: Response): Promise<Response>
         const assets = paginatedFiles.map(file => ({
             filename: file,
             url: dir
-                ? `${req.protocol}://${req.get('host')}/assets/uploads/${dir}/${file}`
-                : `${req.protocol}://${req.get('host')}/assets/uploads/${file}`
+                ? `${req.protocol}://${req.get('host')}/backend/assets/uploads/${dir}/${file}`
+                : `${req.protocol}://${req.get('host')}/backend/assets/uploads/${file}`
         }));
         const responseData = {
             totalAssets: files.length,

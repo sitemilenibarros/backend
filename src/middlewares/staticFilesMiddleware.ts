@@ -10,9 +10,9 @@ export const serveStaticFiles = (app: express.Application) => {
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         next();
     });
-    app.use('/assets/services', express.static(path.join(__dirname, '../assets/services')));
-    app.use('/assets/events', express.static(path.join(__dirname, '../assets/events')));
-    app.use('/assets/testimonials', express.static(path.join(__dirname, '../assets/testimonials')));
-    app.use('/assets/uploads', express.static(path.join(__dirname, '../assets/uploads')));
+    app.use('backend/assets/services', express.static(path.join(__dirname, '../assets/services')));
+    app.use('backend/assets/events', express.static(path.join(__dirname, '../assets/events')));
+    app.use('backend/assets/testimonials', express.static(path.join(__dirname, '../assets/testimonials')));
+    app.use('backend/assets/uploads', express.static(path.join(__dirname, '../assets/uploads')));
 
 };
