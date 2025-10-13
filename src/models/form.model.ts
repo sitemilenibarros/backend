@@ -5,6 +5,12 @@ export default (sequelize: Sequelize) => {
         public id!: number;
         public event_id!: number;
         public form_data!: object;
+        public payment_status!: 'pending' | 'approved' | 'rejected' | 'cancelled';
+        public payment_id?: string;
+        public preference_id?: string;
+        public payment_created_at?: Date;
+        public payment_updated_at?: Date;
+        public deletedAt?: Date;
     }
 
     Form.init(
@@ -26,12 +32,34 @@ export default (sequelize: Sequelize) => {
                 type: DataTypes.JSONB,
                 allowNull: false,
             },
+            payment_status: {
+                type: DataTypes.ENUM('pending', 'approved', 'rejected', 'cancelled'),
+                allowNull: false,
+                defaultValue: 'pending',
+            },
+            payment_id: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            preference_id: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            payment_created_at: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
+            payment_updated_at: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
         },
         {
             sequelize,
             modelName: 'Form',
             tableName: 'forms',
             timestamps: true,
+            paranoid: true,
         }
     );
 

@@ -9,6 +9,7 @@ logs
 # Diretórios de build
 dist/
 build/
+*/assets
 
 # Arquivos de configuração do TypeScript
 *.tsbuildinfo

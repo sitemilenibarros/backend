@@ -7,8 +7,8 @@ import {
     partialUpdateEvent,
     deleteEvent,
     sendMailToEvent,
+    sendMailToParticipant,
     sendMailOnsiteToEvent,
-    createMercadoPagoPreference,
     mercadoPagoWebhook,
 } from '../controllers/events.controller';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
@@ -24,9 +24,9 @@ eventRoutes.patch('/events/:id', authMiddleware, asyncMiddleware(partialUpdateEv
 eventRoutes.delete('/events/:id', authMiddleware, asyncMiddleware(deleteEvent));
 
 eventRoutes.post('/events/:eventId/send-mail', authMiddleware, asyncMiddleware(sendMailToEvent));
+eventRoutes.post('/events/:eventId/participant/:formId/send-mail', authMiddleware, asyncMiddleware(sendMailToParticipant));
 eventRoutes.post('/events/:eventId/send-mail-onsite', authMiddleware, asyncMiddleware(sendMailOnsiteToEvent));
 
-eventRoutes.post('/mercadopago/create-preference', asyncMiddleware(createMercadoPagoPreference));
 eventRoutes.post('/webhook/mercadopago', asyncMiddleware(mercadoPagoWebhook));
 
 export default eventRoutes;
