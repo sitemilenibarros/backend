@@ -8,6 +8,7 @@ export default (sequelize: Sequelize) => {
         public start_date!: Date;
         public end_date!: Date;
         public status!: string;
+        public whatsapp_link?: string;
         public category_id!: number;
         public price_value_online?: number;
         public price_value_onsite?: number;
@@ -75,6 +76,10 @@ export default (sequelize: Sequelize) => {
             },
             limit_onsite_slots: {
                 type: DataTypes.INTEGER,
+                allowNull: true,
+            },
+            whatsapp_link: {
+                type: DataTypes.STRING,
                 allowNull: true,
             },
         },
