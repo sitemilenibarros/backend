@@ -169,7 +169,7 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
         const modality = data.modality || '';
         const email = data.youtubeEmail || null;
 
-        if (modality === 'online' || !email) {
+        if (modality !== 'online' || !email) {
             continue;
         }
 
