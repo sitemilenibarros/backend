@@ -82,35 +82,78 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const offset = (page - 1) * limit;
         const paymentStatus = req.query.payment_status as string;
+        const modality = req.query.modality as string;
         const includeDeleted = req.query.include_deleted === 'true';
-        
-        const whereClause: any = { event_id: eventId };
-        
-        // Por padrão, trazer apenas os aprovados
-        if (paymentStatus && ['pending', 'approved', 'rejected', 'cancelled'].includes(paymentStatus)) {
-            whereClause.payment_status = paymentStatus;
-        } else {
-            whereClause.payment_status = 'approved';
+
+        if (modality && !['presencial', 'online'].includes(modality)) {
+            return res.status(400).json({ message: 'Modalidade deve ser "presencial" ou "online".' });
         }
-        
-        if (!includeDeleted) {
-            whereClause.deletedAt = null;
-        }
-        
-        const { rows: forms, count: total } = await Form.findAndCountAll({
-            where: whereClause,
-            order: [['createdAt', 'DESC']],
+
+        const replacements: any = {
+            eventId,
             limit,
-            offset,
-            paranoid: !includeDeleted
+            offset
+        };
+
+        let paymentCondition = '';
+        if (paymentStatus && ['pending', 'approved', 'rejected', 'cancelled'].includes(paymentStatus)) {
+            paymentCondition = 'AND payment_status = :paymentStatus';
+            replacements.paymentStatus = paymentStatus;
+        } else {
+            paymentCondition = 'AND payment_status = :paymentStatus';
+            replacements.paymentStatus = 'approved';
+        }
+
+        let modalityCondition = '';
+        if (modality) {
+            modalityCondition = `AND form_data->>'modality' = :modality`;
+            replacements.modality = modality;
+        }
+        
+        let deletedCondition = '';
+        if (!includeDeleted) {
+            deletedCondition = 'AND "deletedAt" IS NULL';
+        }
+
+        console.log('Replacements:', replacements);
+        console.log(modalityCondition);
+
+        
+        const query = `
+            SELECT * FROM forms
+            WHERE event_id = :eventId
+            ${paymentCondition}
+            ${modalityCondition}
+            ${deletedCondition}
+            ORDER BY "createdAt" DESC
+            LIMIT :limit OFFSET :offset
+        `;
+
+        const countQuery = `
+            SELECT COUNT(*) as count FROM forms
+            WHERE event_id = :eventId
+            ${paymentCondition}
+            ${modalityCondition}
+            ${deletedCondition}
+        `;
+
+        const forms = await sequelize.query(query, {
+            replacements,
+            type: QueryTypes.SELECT
         });
 
+        const [countResult] = await sequelize.query(countQuery, {
+            replacements,
+            type: QueryTypes.SELECT
+        });
+
+        const total = parseInt((countResult as any).count, 10) || 0;
+
         const enrichedForms = forms.map((form: any) => {
-            const formJson = form.toJSON();
-            const formData = formJson.form_data || {};
-            
+            const formData = form.form_data || {};
+
             return {
-                ...formJson,
+                ...form,
                 participant_name: formData.name || 'Nome não informado',
                 participant_email: formData.email || formData.youtubeEmail || 'Email não informado',
                 participant_phone: formData.phone || 'Telefone não informado',
@@ -123,8 +166,9 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             qtd: forms.length, 
             total, 
             page,
-            paymentStatus,
-            includeDeleted 
+            paymentStatus: replacements.paymentStatus,
+            modality,
+            includeDeleted
         });
 
         return res.status(200).json({
@@ -134,7 +178,8 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             limit,
             totalPages: Math.ceil(total / limit),
             filters: {
-                payment_status: paymentStatus,
+                payment_status: replacements.paymentStatus,
+                modality,
                 include_deleted: includeDeleted
             }
         });
