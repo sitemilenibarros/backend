@@ -9,6 +9,7 @@ export default (sequelize: Sequelize) => {
         public end_date!: Date;
         public status!: string;
         public whatsapp_link?: string;
+        public whatsapp_number?: string;
         public category_id!: number;
         public price_value_online?: number;
         public price_value_onsite?: number;
@@ -82,6 +83,10 @@ export default (sequelize: Sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            whatsapp_number: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            }
         },
         {
             sequelize,
