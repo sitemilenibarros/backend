@@ -173,7 +173,7 @@ export const createFormWithPayment = async (req: Request, res: Response) => {
                        FROM forms
                        WHERE event_id = :eventId
                          AND form_data->>'modality' = 'presencial'
-                         AND payment_status IN ('pending', 'approved')`,
+                         AND payment_status IN ('approved')`,
                 { replacements: { eventId }, type: QueryTypes.SELECT }
             );
             const presencialCount = parseInt((result as any).count, 10) || 0;
