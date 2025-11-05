@@ -452,6 +452,13 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
                     return res.status(200).json({ received: true, warning: 'Formulário não encontrado' });
                 }
 
+                // Buscar evento
+                const event = await Event.findByPk(form.event_id);
+                if (!event) {
+                    logger.warn('mercadoPagoWebhook', 'Evento não encontrado', { eventId: form.event_id });
+                    return res.status(200).json({ received: true, warning: 'Evento não encontrado' });
+                }
+
                 // Mapear status do MercadoPago para nosso enum
                 let newStatus: 'pending' | 'approved' | 'rejected' | 'cancelled' = 'pending';
                 
@@ -489,6 +496,51 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
                         newStatus,
                         paymentId
                     });
+
+                    if (newStatus === 'approved') {
+                        const data: any = form.form_data || {};
+                        const email = data.youtubeEmail || data.email;
+                        const name = data.name || 'Participante';
+
+                        if (email) {
+                            const bccList = (process.env.GMAIL_BCC || '').split(',').map(e => e.trim()).filter(e => !!e);
+
+                            const htmlBody = `
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">
+                              <tr>
+                                <td align="center">
+                                  <table width="480" cellpadding="0" cellspacing="0" style="background:#fff; border-radius:16px; box-shadow:0 2px 8px #e3eaf2; margin:32px 0;">
+                                    <tr>
+                                      <td style="padding:32px 40px; text-align:center;">
+                                        <h1 style="color:#2d3748; font-size:24px; font-weight:bold; margin:0 0 24px;">
+                                          Confirmação de Inscrição
+                                        </h1>
+                                        <p style="color:#4a5568; font-size:16px; line-height:1.6; margin:0 0 24px;">
+                                          Olá ${name}!<br><br>
+                                          Obrigado por garantir sua vaga no evento <strong>${event.title}</strong>.<br>
+                                          Mais informações serão enviadas em breve.
+                                        </p>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                            `;
+
+                            try {
+                                await sendMail({
+                                    to: email,
+                                    bcc: bccList.length ? bccList.join(',') : undefined,
+                                    subject: `Confirmação de Inscrição - ${event.title}`,
+                                    html: htmlBody,
+                                });
+                                logger.info('mercadoPagoWebhook', 'Email de confirmação enviado', { email, formId });
+                            } catch (emailError) {
+                                logger.error('mercadoPagoWebhook', 'Erro ao enviar email de confirmação', { email, formId, error: emailError });
+                            }
+                        }
+                    }
                 } else {
                     logger.info('mercadoPagoWebhook', 'Status não mudou, não atualizando', {
                         formId,
