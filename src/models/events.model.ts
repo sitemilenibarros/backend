@@ -17,6 +17,9 @@ export default (sequelize: Sequelize) => {
         public from_price_value_onsite?: number;
         public address?: string;
         public limit_onsite_slots?: number;
+        public limit_online_slots?: number;
+        public external_payment_link_online?: string;
+        public external_payment_link_onsite?: string;
     }
 
     Event.init(
@@ -79,11 +82,23 @@ export default (sequelize: Sequelize) => {
                 type: DataTypes.INTEGER,
                 allowNull: true,
             },
+            limit_online_slots: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            },
             whatsapp_link: {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
             whatsapp_number: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            external_payment_link_online: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            external_payment_link_onsite: {
                 type: DataTypes.STRING,
                 allowNull: true,
             }

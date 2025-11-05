@@ -154,7 +154,10 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
         return res.status(404).json({ message: 'Evento não encontrado.' });
     }
 
-    const forms = await Form.findAll({ where: { event_id: eventId } });
+    const forms = await sequelize.query(
+        `SELECT * FROM forms WHERE event_id = :eventId AND form_data->>'modality' = 'online' AND payment_status IN ('approved') and "deletedAt" is null`,
+        { replacements: { eventId }, type: QueryTypes.SELECT }
+    );
     logger.info('sendMailToEvent', 'Forms encontrados', forms.length);
 
     const bccList = (process.env.GMAIL_BCC || '').split(',').map(e => e.trim()).filter(e => !!e);
@@ -165,13 +168,12 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
     let failedEmails: string[] = [];
 
     for (const form of forms) {
-        const data: any = form.form_data || {};
-        const modality = data.modality || '';
-        const email = data.youtubeEmail || null;
-
-        if (modality !== 'online' || !email) {
+        if (!(form instanceof Form)){
+            logger.warn('sendMailToEvent', 'Formulário inválido encontrado, pulando', form);
             continue;
         }
+        const data: any = form.form_data || {};
+        const email = data.youtubeEmail || null;
 
         let htmlBody = `
         <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fb; padding:0; font-family:Arial,sans-serif;">

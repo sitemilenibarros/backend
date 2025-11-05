@@ -229,6 +229,23 @@ export const createFormWithPayment = async (req: Request, res: Response) => {
             }
         }
 
+        if (modality === 'online') {
+            const [result] = await sequelize.query(
+                `SELECT count(*) AS count
+                       FROM forms
+                       WHERE event_id = :eventId
+                         AND form_data->>'modality' = 'online'
+                         AND payment_status IN ('approved')`,
+                { replacements: { eventId }, type: QueryTypes.SELECT }
+            );
+            const onlineCount = parseInt((result as any).count, 10) || 0;
+            logger.info('createFormWithPayment', 'Inscrições online encontradas', { eventId, onlineCount });
+            const limit = event.limit_online_slots || 999;
+            if (onlineCount >= limit) {
+                return res.status(400).json({ error: `Limite de ${limit} inscrições online atingido para este evento.` });
+            }
+        }
+
         // Verificar preço
         const priceValue = modality === 'online' ? event.price_value_online : event.price_value_onsite;
         if (!priceValue) {
