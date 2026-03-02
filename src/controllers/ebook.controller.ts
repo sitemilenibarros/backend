@@ -61,7 +61,7 @@ export const getEbookById = async (req: Request, res: Response): Promise<Respons
     const { id } = req.params;
     logger.info('getEbookById', 'Buscando ebook com ID:', id);
     try {
-        const ebook = await Ebook.findByPk(id);
+        const ebook = await Ebook.findByPk(id as string);
         if (!ebook) {
             logger.warn('getEbookById', 'Ebook não encontrado para ID:', id);
             return res.status(404).json({ message: 'Ebook não encontrado.' });
@@ -78,7 +78,7 @@ export const updateEbook = async (req: Request, res: Response): Promise<Response
     const { title, description, type, externalLink, filePath } = req.body;
     logger.info('updateEbook', 'Atualizando ebook ID:', id);
     try {
-        const ebook = await Ebook.findByPk(id);
+        const ebook = await Ebook.findByPk(id as string);
         if (!ebook) {
             logger.warn('updateEbook', 'Ebook não encontrado para ID:', id);
             return res.status(404).json({ message: 'Ebook não encontrado.' });
@@ -102,7 +102,7 @@ export const deleteEbook = async (req: Request, res: Response): Promise<Response
     const { id } = req.params;
     logger.info('deleteEbook', 'Deletando ebook ID:', id);
     try {
-        const ebook = await Ebook.findByPk(id);
+        const ebook = await Ebook.findByPk(id as string);
         if (!ebook) {
             logger.warn('deleteEbook', 'Ebook não encontrado para ID:', id);
             return res.status(404).json({ message: 'Ebook não encontrado.' });

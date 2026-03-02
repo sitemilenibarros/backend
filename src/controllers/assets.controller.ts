@@ -87,9 +87,9 @@ export const deleteAsset = async (req: Request, res: Response): Promise<Response
     try {
         const dir = getValidatedDirectory(req);
         if (dir) {
-            assetPath = path.join(assetPath, dir, filename);
+            assetPath = path.join(assetPath, dir, String(filename));
         } else {
-            assetPath = path.join(assetPath, filename);
+            assetPath = path.join(assetPath, String(filename));
         }
         await fs.promises.access(assetPath, fs.constants.F_OK);
         await fs.promises.unlink(assetPath);

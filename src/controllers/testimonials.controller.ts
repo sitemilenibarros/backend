@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import TestimonialFactory from '../models/testimonials.model';
 import sequelize from '../config/db';
-import {Op} from "sequelize";
+import { Op } from "sequelize";
 import { logger } from '../utils/logger';
 
 const Testimonial = TestimonialFactory(sequelize);
@@ -42,7 +42,7 @@ export const getTestimonialById = async (req: Request, res: Response): Promise<R
     const { id } = req.params;
     logger.info('getTestimonialById', 'Buscando', id);
     try {
-        const testimonial = await Testimonial.findByPk(id);
+        const testimonial = await Testimonial.findByPk(id as string);
         if (!testimonial) {
             logger.warn('getTestimonialById', 'Não encontrado', id);
             return res.status(404).json({ message: 'Testemunho não encontrado' });
@@ -59,7 +59,7 @@ export const updateTestimonial = async (req: Request, res: Response): Promise<Re
     const { name, testimonial, photo } = req.body;
     logger.info('updateTestimonial', 'Atualizando', { id, name, testimonial, photo });
     try {
-        const testimonialToUpdate = await Testimonial.findByPk(id);
+        const testimonialToUpdate = await Testimonial.findByPk(id as string);
         if (!testimonialToUpdate) {
             logger.warn('updateTestimonial', 'Não encontrado', id);
             return res.status(404).json({ message: 'Testemunho não encontrado' });
@@ -81,7 +81,7 @@ export const deleteTestimonial = async (req: Request, res: Response): Promise<Re
     const { id } = req.params;
     logger.info('deleteTestimonial', 'Deletando', id);
     try {
-        const testimonial = await Testimonial.findByPk(id);
+        const testimonial = await Testimonial.findByPk(id as string);
         if (!testimonial) {
             logger.warn('deleteTestimonial', 'Não encontrado (idempotente)', id);
             return res.status(200).json({ message: 'Testemunho deletado com sucesso' });

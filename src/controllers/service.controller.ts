@@ -67,7 +67,7 @@ export const getServiceById = async (req: Request, res: Response): Promise<Respo
     const { id } = req.params;
     logger.info('getServiceById', 'Buscando serviço', id);
     try {
-        const service = await Service.findByPk(id);
+        const service = await Service.findByPk(id as string);
         if (!service) {
             logger.warn('getServiceById', 'Serviço não encontrado', id);
             return res.status(404).json({ message: 'Serviço não encontrado' });
@@ -98,7 +98,7 @@ export const updateService = async (req: Request, res: Response): Promise<Respon
     } = req.body;
     logger.info('updateService', 'Atualizando serviço', id);
     try {
-        const service = await Service.findByPk(id);
+        const service = await Service.findByPk(id as string);
         if (!service) {
             logger.warn('updateService', 'Serviço não encontrado', id);
             return res.status(404).json({ message: 'Serviço não encontrado' });
@@ -129,7 +129,7 @@ export const deleteService = async (req: Request, res: Response): Promise<Respon
     const { id } = req.params;
     logger.info('deleteService', 'Deletando serviço', id);
     try {
-        const service = await Service.findByPk(id);
+        const service = await Service.findByPk(id as string);
         if (!service) {
             logger.warn('deleteService', 'Serviço não encontrado (idempotente)', id);
             return res.status(200).json({ message: 'Serviço deletado com sucesso' });

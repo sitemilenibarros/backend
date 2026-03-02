@@ -82,7 +82,7 @@ export const getEventPageBySource = async (req: Request, res: Response): Promise
             return res.status(404).json({ message: 'Página de evento não encontrada para este evento.' });
         }
         const pageContent = pageFound.toJSON().content;
-        const hydratedPage = hydrateEventWithSchema(event_source, pageContent);
+        const hydratedPage = hydrateEventWithSchema(event_source as string, pageContent);
         return res.status(200).json(hydratedPage);
     } catch (err) {
         logger.error('getEventPageBySource', 'Erro ao buscar página de evento', err);
@@ -94,7 +94,7 @@ export const updateEventPage = async (req: Request, res: Response): Promise<Resp
     const { event_id, event_source } = req.params;
     const { ...contentData } = req.body;
     logger.info('updateEventPage', 'Atualizando página', { event_id, event_source });
-    const validation = validateEventPageData(event_source, contentData);
+    const validation = validateEventPageData(event_source as string, contentData);
     if (!validation.isValid) {
         logger.warn('updateEventPage', 'Erro de validação', validation.errors);
         return res.status(400).json({ message: 'Erro de validação', errors: validation.errors });
@@ -132,7 +132,7 @@ export const partialUpdateEventPage = async (req: Request, res: Response): Promi
             ...page.content as any,
             ...updates,
         };
-        const validation = validateEventPageData(event_source, updatedContentData);
+        const validation = validateEventPageData(event_source as string, updatedContentData);
         if (!validation.isValid) {
             logger.warn('partialUpdateEventPage', 'Erro de validação', validation.errors);
             return res.status(400).json({ message: 'Erro de validação', errors: validation.errors });
@@ -187,7 +187,7 @@ export const deleteEventPagesByEventId = async (req: Request, res: Response): Pr
 export const getEventSchema = async (req: Request, res: Response): Promise<Response> => {
     const { event_source } = req.params;
     logger.info('getEventSchema', 'Buscando schema', event_source);
-    const schema = loadSchema(event_source);
+    const schema = loadSchema(event_source as string);
     if (!schema) {
         logger.warn('getEventSchema', 'Schema não encontrado', event_source);
         return res.status(404).json({ message: 'Esquema de evento não encontrado.' });

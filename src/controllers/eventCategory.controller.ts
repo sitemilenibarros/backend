@@ -43,7 +43,7 @@ export const getEventCategoryById = async (req: Request, res: Response): Promise
     const { id } = req.params;
     logger.info('getEventCategoryById', 'Buscando categoria com ID:', id);
     try {
-        const categoryFound = await EventCategory.findByPk(id);
+        const categoryFound = await EventCategory.findByPk(String(id));
         if (!categoryFound) {
             logger.warn('getEventCategoryById', 'Categoria não encontrada para ID:', id);
             return res.status(404).json({ message: 'Categoria não encontrada.' });
@@ -65,13 +65,13 @@ export const updateEventCategory = async (req: Request, res: Response): Promise<
             return res.status(400).json({ message: 'O nome da categoria não pode ter mais de 100 caracteres.' });
         }
         const [updated] = await EventCategory.update(updates, {
-            where: { id },
+            where: { id: String(id) },
         });
         if (updated === 0) {
             logger.warn('updateEventCategory', 'Categoria não encontrada para ID:', id);
             return res.status(404).json({ message: 'Categoria não encontrada.' });
         }
-        const updatedCategory = await EventCategory.findByPk(id);
+        const updatedCategory = await EventCategory.findByPk(String(id));
         logger.info('updateEventCategory', 'Categoria atualizada:', { id, name: updatedCategory?.name });
         return res.status(200).json(updatedCategory?.toJSON());
     } catch (err) {
@@ -85,7 +85,7 @@ export const deleteEventCategory = async (req: Request, res: Response): Promise<
     logger.info('deleteEventCategory', 'Deletando categoria ID:', id);
     try {
         const deletedRows = await EventCategory.destroy({
-            where: { id },
+            where: { id: String(id) },
         });
         if (deletedRows === 0) {
             logger.warn('deleteEventCategory', 'Categoria não encontrada para ID:', id);

@@ -5,6 +5,7 @@ import FormFactory from '../models/form.model';
 import { logger } from '../utils/logger';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { QueryTypes } from 'sequelize';
+import ExcelJS from 'exceljs';
 
 const Form = FormFactory(sequelize);
 const Event = EventFactory(sequelize);
@@ -24,6 +25,11 @@ export const createForm = async (req: Request, res: Response) => {
     try {
         const { eventId } = req.params;
         const form_data = req.body;
+
+        if (form_data.imageConsent !== true) {
+            return res.status(400).json({ error: 'O consentimento de uso de imagem é obrigatório.' });
+        }
+
         const form = await Form.create({
             event_id: eventId,
             form_data
@@ -63,7 +69,7 @@ export const listForms = async (req: Request, res: Response) => {
 export const getFormById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const form = await Form.findByPk(id);
+        const form = await Form.findByPk(id as string);
         if (!form) {
             logger.warn('getFormById', 'Formulário não encontrado', id);
             return res.status(404).json({ message: 'Formulário não encontrado.' });
@@ -109,7 +115,7 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             modalityCondition = `AND form_data->>'modality' = :modality`;
             replacements.modality = modality;
         }
-        
+
         let deletedCondition = '';
         if (!includeDeleted) {
             deletedCondition = 'AND "deletedAt" IS NULL';
@@ -118,7 +124,7 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
         console.log('Replacements:', replacements);
         console.log(modalityCondition);
 
-        
+
         const query = `
             SELECT * FROM forms
             WHERE event_id = :eventId
@@ -161,10 +167,10 @@ export const getFormsByEventId = async (req: Request, res: Response) => {
             };
         });
 
-        logger.info('getFormsByEventId', 'Listagem por evento', { 
-            eventId, 
-            qtd: forms.length, 
-            total, 
+        logger.info('getFormsByEventId', 'Listagem por evento', {
+            eventId,
+            qtd: forms.length,
+            total,
             page,
             paymentStatus: replacements.paymentStatus,
             modality,
@@ -203,9 +209,12 @@ export const createFormWithPayment = async (req: Request, res: Response) => {
         if (!modality || !['presencial', 'online'].includes(modality)) {
             return res.status(400).json({ error: 'Modalidade deve ser "presencial" ou "online".' });
         }
+        if (form_data.imageConsent !== true) {
+            return res.status(400).json({ error: 'O consentimento de uso de imagem é obrigatório.' });
+        }
 
         // Buscar evento
-        const event = await Event.findByPk(eventId);
+        const event = await Event.findByPk(eventId as string);
         if (!event) {
             logger.warn('createFormWithPayment', 'Evento não encontrado', eventId);
             return res.status(404).json({ error: 'Evento não encontrado.' });
@@ -262,7 +271,7 @@ export const createFormWithPayment = async (req: Request, res: Response) => {
         });
 
         logger.info('createFormWithPayment', 'Formulário criado', { formId: form.id, eventId });
-        
+
         const body: any = {
             items: [{
                 title: event.title,
@@ -300,10 +309,10 @@ export const createFormWithPayment = async (req: Request, res: Response) => {
             payment_updated_at: new Date()
         });
 
-        logger.info('createFormWithPayment', 'Preferência criada e formulário atualizado', { 
-            formId: form.id, 
-            preferenceId: result.id, 
-            init_point: result.init_point 
+        logger.info('createFormWithPayment', 'Preferência criada e formulário atualizado', {
+            formId: form.id,
+            preferenceId: result.id,
+            init_point: result.init_point
         });
 
         return res.status(201).json({
@@ -338,12 +347,12 @@ export const getFormByPaymentId = async (req: Request, res: Response) => {
         const form = await Form.findOne({
             where: { payment_id: paymentId }
         });
-        
+
         if (!form) {
             logger.warn('getFormByPaymentId', 'Formulário não encontrado', paymentId);
             return res.status(404).json({ message: 'Formulário não encontrado para este payment_id.' });
         }
-        
+
         return res.status(200).json(form);
     } catch (error) {
         logger.error('getFormByPaymentId', 'Erro ao buscar formulário por payment_id', error);
@@ -354,33 +363,33 @@ export const getFormByPaymentId = async (req: Request, res: Response) => {
 export const updatePaymentStatus = async (req: Request, res: Response) => {
     const { formId } = req.params;
     const { payment_status, payment_id } = req.body;
-    
+
     logger.info('updatePaymentStatus', 'Atualizando status de pagamento', { formId, payment_status, payment_id });
-    
+
     try {
-        const form = await Form.findByPk(formId);
-        
+        const form = await Form.findByPk(formId as string);
+
         if (!form) {
             logger.warn('updatePaymentStatus', 'Formulário não encontrado', formId);
             return res.status(404).json({ message: 'Formulário não encontrado.' });
         }
-        
+
         await form.update({
             payment_status,
             payment_id,
             payment_updated_at: new Date()
         });
-        
+
         logger.info('updatePaymentStatus', 'Status atualizado com sucesso', { formId, payment_status });
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             form: {
                 id: form.id,
                 payment_status: form.payment_status,
                 payment_id: form.payment_id
             }
         });
-        
+
     } catch (error) {
         logger.error('updatePaymentStatus', 'Erro ao atualizar status de pagamento', error);
         return res.status(500).json({ message: 'Erro ao atualizar status de pagamento', error });
@@ -389,26 +398,26 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
 export const softDeleteForm = async (req: Request, res: Response) => {
     const { id: formId } = req.params;
-    
+
     logger.info('softDeleteForm', 'Deletando formulário (soft delete)', formId);
-    
+
     try {
-        const form = await Form.findByPk(formId);
-        
+        const form = await Form.findByPk(formId as string);
+
         if (!form) {
             logger.warn('softDeleteForm', 'Formulário não encontrado', formId);
             return res.status(404).json({ message: 'Formulário não encontrado.' });
         }
-        
+
         await form.destroy();
-        
+
         logger.info('softDeleteForm', 'Formulário deletado com sucesso', formId);
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             message: 'Formulário deletado com sucesso.',
             form_id: formId
         });
-        
+
     } catch (error) {
         logger.error('softDeleteForm', 'Erro ao deletar formulário', error);
         return res.status(500).json({ message: 'Erro ao deletar formulário', error });
@@ -417,33 +426,238 @@ export const softDeleteForm = async (req: Request, res: Response) => {
 
 export const restoreForm = async (req: Request, res: Response) => {
     const { id: formId } = req.params;
-    
+
     logger.info('restoreForm', 'Restaurando formulário', formId);
-    
+
     try {
-        const form = await Form.findByPk(formId, { paranoid: false });
-        
+        const form = await Form.findByPk(formId as string, { paranoid: false });
+
         if (!form) {
             logger.warn('restoreForm', 'Formulário não encontrado', formId);
             return res.status(404).json({ message: 'Formulário não encontrado.' });
         }
-        
+
         if (!form.deletedAt) {
             logger.warn('restoreForm', 'Formulário não está deletado', formId);
             return res.status(400).json({ message: 'Formulário não está deletado.' });
         }
-        
+
         await form.restore();
-        
+
         logger.info('restoreForm', 'Formulário restaurado com sucesso', formId);
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             message: 'Formulário restaurado com sucesso.',
             form_id: formId
         });
-        
+
     } catch (error) {
         logger.error('restoreForm', 'Erro ao restaurar formulário', error);
         return res.status(500).json({ message: 'Erro ao restaurar formulário', error });
+    }
+};
+
+const getEducationLabel = (education: string | undefined) => {
+    const labels: Record<string, string> = {
+        fundamental: 'Ensino Fundamental',
+        medio: 'Ensino Médio',
+        graduacao: 'Graduação',
+        'pos-graduacao': 'Pós-Graduação',
+        'mestrado-doutorado': 'Mestrado/Doutorado'
+    };
+    return labels[education as string] || education || 'Não informado';
+};
+
+const getTreatmentLabel = (treatment: string | undefined) => {
+    const labels: Record<string, string> = {
+        no: 'Não faz tratamento',
+        neurological: 'Tratamento Neurológico',
+        psychiatric: 'Tratamento Psiquiátrico'
+    };
+    return labels[treatment as string] || treatment || 'Não informado';
+};
+
+const getCompulsionLabel = (compulsion: string | undefined) => {
+    const labels: Record<string, string> = {
+        no: 'Não possui compulsão',
+        yes: 'Possui compulsão'
+    };
+    return labels[compulsion as string] || compulsion || 'Não informado';
+};
+
+const getPaymentStatusLabel = (status: string | undefined) => {
+    const labels: Record<string, string> = {
+        pending: 'Pendente',
+        approved: 'Aprovado',
+        rejected: 'Rejeitado',
+        cancelled: 'Cancelado'
+    };
+    return labels[status as string] || 'Não informado';
+};
+
+export const exportEventForms = async (req: Request, res: Response) => {
+    const { eventId } = req.params;
+    const format = req.query.format as string || 'csv';
+    const paymentStatus = req.query.payment_status as string;
+    const modality = req.query.modality as string;
+    const includeDeleted = req.query.include_deleted === 'true';
+
+    try {
+        const replacements: any = { eventId };
+
+        let filters = [];
+
+        if (paymentStatus && ['pending', 'approved', 'rejected', 'cancelled'].includes(paymentStatus)) {
+            filters.push('payment_status = :paymentStatus');
+            replacements.paymentStatus = paymentStatus;
+        } else {
+            filters.push('payment_status = :paymentStatus');
+            replacements.paymentStatus = 'approved';
+        }
+
+        if (modality && ['presencial', 'online'].includes(modality)) {
+            filters.push(`form_data->>'modality' = :modality`);
+            replacements.modality = modality;
+        }
+
+        if (!includeDeleted) {
+            filters.push('"deletedAt" IS NULL');
+        }
+
+        const whereClause = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
+
+        const query = `
+            SELECT * FROM forms
+            WHERE event_id = :eventId
+            ${whereClause}
+            ORDER BY form_data->>'name' ASC, "createdAt" DESC
+        `;
+
+        const forms = await sequelize.query(query, {
+            replacements,
+            type: QueryTypes.SELECT
+        }) as any[];
+
+        if (forms.length === 0) {
+            return res.status(404).json({ message: 'Nenhuma inscrição encontrada para exportação.' });
+        }
+
+        const enrichedForms = forms.map((form: any) => {
+            const formData = form.form_data || {};
+            return {
+                Name: formData.name || 'Não informado',
+                Email: formData.email || 'Não informado',
+                Phone: formData.phone || '',
+                Modality: formData.modality === 'presencial' ? 'Presencial' : 'Online',
+                Age: formData.age || '',
+                Education: getEducationLabel(formData.education),
+                Treatment: getTreatmentLabel(formData.treatment),
+                TreatmentDetails: formData.treatmentDetails || '',
+                Compulsion: getCompulsionLabel(formData.compulsion),
+                CompulsionDetails: formData.compulsionDetails || '',
+                Goals: formData.goals || '',
+                PaymentStatus: getPaymentStatusLabel(form.payment_status),
+                RegistrationDate: new Date(form.createdAt).toLocaleString('pt-BR')
+            };
+        });
+
+        if (format === 'csv') {
+            const fields = Object.keys(enrichedForms[0]);
+            const replacer = (key: string, value: any) => value === null ? '' : value;
+
+            const csvData = enrichedForms.map(row =>
+                fields.map(fieldName => JSON.stringify(row[fieldName as keyof typeof row], replacer)).join(',')
+            );
+
+            csvData.unshift(fields.join(','));
+            const csvString = csvData.join('\r\n');
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename=inscricoes_${eventId}_${Date.now()}.csv`);
+            return res.send(Buffer.from('\\uFEFF' + csvString, 'utf-8')); // Add BOM for excel
+        }
+        else if (format === 'xlsx') {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Inscrições');
+
+            worksheet.columns = [
+                { header: 'Nome', key: 'Name', width: 30 },
+                { header: 'E-mail', key: 'Email', width: 35 },
+                { header: 'Telefone', key: 'Phone', width: 20 },
+                { header: 'Modalidade', key: 'Modality', width: 15 },
+                { header: 'Idade', key: 'Age', width: 10 },
+                { header: 'Educação', key: 'Education', width: 25 },
+                { header: 'Tratamento', key: 'Treatment', width: 25 },
+                { header: 'Detalhes Tratamento', key: 'TreatmentDetails', width: 30 },
+                { header: 'Compulsão', key: 'Compulsion', width: 20 },
+                { header: 'Detalhes Compulsão', key: 'CompulsionDetails', width: 30 },
+                { header: 'Objetivos', key: 'Goals', width: 40 },
+                { header: 'Status Pagamento', key: 'PaymentStatus', width: 20 },
+                { header: 'Data Inscrição', key: 'RegistrationDate', width: 22 }
+            ];
+
+            worksheet.addRows(enrichedForms);
+
+            worksheet.getRow(1).font = { bold: true };
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=inscricoes_${eventId}_${Date.now()}.xlsx`);
+
+            await workbook.xlsx.write(res);
+            return res.end();
+        }
+        else if (format === 'txt') {
+            const cols = [
+                { key: 'Name', label: 'Nome' },
+                { key: 'Email', label: 'E-mail' },
+                { key: 'Phone', label: 'Telefone' },
+                { key: 'Modality', label: 'Modalidade' },
+                { key: 'Age', label: 'Idade' },
+                { key: 'Education', label: 'Educação' },
+                { key: 'Treatment', label: 'Tratamento' },
+                { key: 'Compulsion', label: 'Compulsão' },
+                { key: 'PaymentStatus', label: 'Pagamento' },
+                { key: 'RegistrationDate', label: 'Data Inscrição' }
+            ];
+
+            const colWidths = cols.map(col => {
+                const maxContentLen = Math.max(
+                    ...enrichedForms.map(form => String((form as Record<string, any>)[col.key] || '').length)
+                );
+                return Math.max(col.label.length, maxContentLen) + 2;
+            });
+
+            const buildRow = (rowData: string[]) => {
+                return rowData.map((val, idx) => {
+                    const str = val || '';
+                    return str.padEnd(colWidths[idx], ' ');
+                }).join('| ');
+            };
+
+            let txtContent = `RELATÓRIO DE INSCRIÇÕES - EVENTO #${eventId}\n`;
+            txtContent += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+            txtContent += `Total de inscrições: ${enrichedForms.length}\n\n`;
+
+            // Header line
+            const headerStrs = cols.map(c => c.label);
+            txtContent += buildRow(headerStrs) + '\n';
+            txtContent += '-'.repeat(colWidths.reduce((a, b) => a + b, 0) + (cols.length * 2)) + '\n';
+
+            // Rows
+            enrichedForms.forEach(form => {
+                const rowStrs = cols.map(c => String((form as Record<string, any>)[c.key] || ''));
+                txtContent += buildRow(rowStrs) + '\n';
+            });
+
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename=relatorio_${eventId}_${Date.now()}.txt`);
+            return res.send(txtContent);
+        } else {
+            return res.status(400).json({ message: 'Formato de exportação não suportado. Use csv, txt ou xlsx.' });
+        }
+
+    } catch (error) {
+        logger.error('exportEventForms', 'Erro ao exportar formulários', error);
+        return res.status(500).json({ message: 'Erro ao exportar formulários', error });
     }
 };

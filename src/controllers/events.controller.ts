@@ -5,7 +5,7 @@ import { sendMail } from '../services/email.service';
 import FormFactory from '../models/form.model';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { logger } from '../utils/logger';
-import {Op, QueryTypes, Sequelize} from "sequelize";
+import { Op, QueryTypes, Sequelize } from "sequelize";
 
 const Event = EventFactory(sequelize);
 const Form = FormFactory(sequelize);
@@ -63,7 +63,7 @@ export const getEventById = async (req: Request, res: Response): Promise<Respons
     const { id } = req.params;
     logger.info('getEventById', 'Buscando evento por ID', id);
     try {
-        const eventFound = await Event.findByPk(id);
+        const eventFound = await Event.findByPk(id as string);
 
         if (!eventFound) {
             logger.warn('getEventById', 'Evento não encontrado', id);
@@ -84,7 +84,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<Response
     logger.info('updateEvent', 'Atualizando evento', { id, updates });
     try {
         const [updated] = await Event.update(updates, {
-            where: { id },
+            where: { id: id as string },
         });
 
         if (updated === 0) {
@@ -92,7 +92,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<Response
             return res.status(404).json({ message: 'Evento não encontrado.' });
         }
 
-        const updatedEvent = await Event.findByPk(id);
+        const updatedEvent = await Event.findByPk(id as string);
         logger.info('updateEvent', 'Evento atualizado', updatedEvent?.toJSON());
         return res.status(200).json(updatedEvent?.toJSON());
     } catch (err) {
@@ -106,7 +106,7 @@ export const partialUpdateEvent = async (req: Request, res: Response): Promise<R
     const updates = req.body;
     logger.info('partialUpdateEvent', 'Atualização parcial do evento', { id, updates });
     try {
-        const event = await Event.findByPk(id);
+        const event = await Event.findByPk(id as string);
 
         if (!event) {
             logger.warn('partialUpdateEvent', 'Evento não encontrado para atualização parcial', id);
@@ -127,7 +127,7 @@ export const deleteEvent = async (req: Request, res: Response): Promise<Response
     logger.info('deleteEvent', 'Deletando evento', id);
     try {
         const deletedRows = await Event.destroy({
-            where: { id },
+            where: { id: id as string },
         });
 
         if (deletedRows === 0) {
@@ -148,7 +148,7 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
     const { content_url } = req.body;
 
     logger.info('sendMailToEvent', 'Iniciando envio de e-mails', { eventId });
-    const event = await Event.findByPk(eventId);
+    const event = await Event.findByPk(eventId as string);
     if (!event) {
         logger.warn('sendMailToEvent', 'Evento não encontrado', eventId);
         return res.status(404).json({ message: 'Evento não encontrado.' });
@@ -168,7 +168,7 @@ export const sendMailToEvent = async (req: Request, res: Response): Promise<Resp
     let failedEmails: string[] = [];
 
     for (const form of forms) {
-        if (!(form instanceof Form)){
+        if (!(form instanceof Form)) {
             logger.warn('sendMailToEvent', 'Formulário inválido encontrado, pulando', form);
             continue;
         }
@@ -228,8 +228,8 @@ export const sendMailToParticipant = async (req: Request, res: Response): Promis
     const { content_url } = req.body;
 
     logger.info('sendMailToParticipant', 'Iniciando envio individual', { eventId, formId });
-    
-    const event = await Event.findByPk(eventId);
+
+    const event = await Event.findByPk(eventId as string);
     if (!event) {
         logger.warn('sendMailToParticipant', 'Evento não encontrado', eventId);
         return res.status(404).json({ message: 'Evento não encontrado.' });
@@ -292,20 +292,20 @@ export const sendMailToParticipant = async (req: Request, res: Response): Promis
             subject: `Link da Conferência - ${event.title}`,
             html: htmlBody,
         });
-        
+
         logger.info('sendMailToParticipant', 'Email enviado com sucesso', { email, eventId, formId });
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             message: `Link da conferência enviado para ${name} (${email})`,
             participant: { name, email }
         });
-        
+
     } catch (err) {
         logger.error('sendMailToParticipant', 'Erro ao enviar e-mail', { email, err });
-        return res.status(500).json({ 
-            success: false, 
+        return res.status(500).json({
+            success: false,
             message: 'Erro ao enviar email. Tente novamente.',
-            error: err 
+            error: err
         });
     }
 };
@@ -314,7 +314,7 @@ export const sendMailOnsiteToEvent = async (req: Request, res: Response): Promis
     const { eventId } = req.params;
 
     logger.info('sendMailOnsiteToEvent', 'Iniciando envio de e-mails presenciais', { eventId });
-    const event = await Event.findByPk(eventId);
+    const event = await Event.findByPk(eventId as string);
     if (!event) {
         logger.warn('sendMailOnsiteToEvent', 'Evento não encontrado', eventId);
         return res.status(404).json({ message: 'Evento não encontrado.' });
@@ -413,7 +413,7 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
         // Processar notificação de pagamento
         if (type === 'payment' || topic === 'payment') {
             const paymentId = data?.id || id;
-            
+
             if (!paymentId) {
                 logger.warn('mercadoPagoWebhook', 'Payment ID não encontrado na notificação');
                 return res.status(200).json({ received: true, warning: 'Payment ID não encontrado' });
@@ -436,7 +436,7 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
                 // Extrair form_id do external_reference
                 const externalRef = paymentInfo.external_reference || '';
                 const formIdMatch = externalRef.match(/^form-(\d+)-/);
-                
+
                 if (!formIdMatch) {
                     logger.warn('mercadoPagoWebhook', 'Form ID não encontrado no external_reference', { external_reference: externalRef });
                     return res.status(200).json({ received: true, warning: 'Form ID não encontrado' });
@@ -461,7 +461,7 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
 
                 // Mapear status do MercadoPago para nosso enum
                 let newStatus: 'pending' | 'approved' | 'rejected' | 'cancelled' = 'pending';
-                
+
                 switch (paymentInfo.status) {
                     case 'approved':
                         newStatus = 'approved';
@@ -549,8 +549,8 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
                     });
                 }
 
-                return res.status(200).json({ 
-                    received: true, 
+                return res.status(200).json({
+                    received: true,
                     processed: true,
                     form_id: formId,
                     status: newStatus
@@ -561,10 +561,10 @@ export const mercadoPagoWebhook = async (req: Request, res: Response): Promise<R
                     paymentId,
                     error: mpError.message || mpError
                 });
-                
+
                 // Retorna sucesso para não reenviar webhook, mas loga o erro
-                return res.status(200).json({ 
-                    received: true, 
+                return res.status(200).json({
+                    received: true,
                     error: 'Erro ao processar pagamento',
                     payment_id: paymentId
                 });

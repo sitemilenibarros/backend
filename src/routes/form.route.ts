@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { 
-    createForm, 
-    listForms, 
-    getFormById, 
-    getFormsByEventId, 
-    createFormWithPayment, 
-    getFormByPaymentId, 
+import {
+    createForm,
+    listForms,
+    getFormById,
+    getFormsByEventId,
+    exportEventForms,
+    createFormWithPayment,
+    getFormByPaymentId,
     updatePaymentStatus,
     softDeleteForm,
     restoreForm
@@ -19,6 +20,7 @@ router.post('/:eventId', asyncMiddleware(createForm));
 router.get('/', asyncMiddleware(listForms));
 router.get('/:id', asyncMiddleware(getFormById));
 router.get('/by-event/:eventId', asyncMiddleware(getFormsByEventId));
+router.get('/:eventId/export', asyncMiddleware(exportEventForms));
 
 router.post('/:eventId/with-payment', asyncMiddleware(createFormWithPayment));
 router.get('/payment/:paymentId', asyncMiddleware(getFormByPaymentId));
