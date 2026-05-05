@@ -542,11 +542,25 @@ export const exportEventForms = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Nenhuma inscrição encontrada para exportação.' });
         }
 
+        const normalizeName = (rawName: string | undefined) => {
+            if (!rawName) return '';
+            return rawName.trim().toLowerCase().split(/\s+/).map(part => {
+                return part.split('-').map(sub => sub.length > 0 ? (sub[0].toUpperCase() + sub.slice(1)) : '').join('-');
+            }).join(' ');
+        };
+
+        const normalizeEmail = (rawEmail: string | undefined) => {
+            if (!rawEmail) return '';
+            return rawEmail.trim().toLowerCase();
+        };
+
         const enrichedForms = forms.map((form: any) => {
             const formData = form.form_data || {};
+            const rawName = formData.name;
+            const rawEmail = formData.email || formData.youtubeEmail;
             return {
-                Name: formData.name || 'Não informado',
-                Email: formData.email || 'Não informado',
+                Name: rawName ? normalizeName(rawName) : 'Não informado',
+                Email: rawEmail ? normalizeEmail(rawEmail) : 'Não informado',
                 Phone: formData.phone || '',
                 Modality: formData.modality === 'presencial' ? 'Presencial' : 'Online',
                 Age: formData.age || '',
@@ -608,6 +622,7 @@ export const exportEventForms = async (req: Request, res: Response) => {
         }
         else if (format === 'txt') {
             const cols = [
+                { key: 'Row', label: 'Nº' },
                 { key: 'Name', label: 'Nome' },
                 { key: 'Email', label: 'E-mail' },
                 { key: 'Phone', label: 'Telefone' },
@@ -621,15 +636,24 @@ export const exportEventForms = async (req: Request, res: Response) => {
             ];
 
             const colWidths = cols.map(col => {
-                const maxContentLen = Math.max(
-                    ...enrichedForms.map(form => String((form as Record<string, any>)[col.key] || '').length)
-                );
+                let maxContentLen = 0;
+                if (col.key === 'Row') {
+                    // Determine width based on total number of rows (digits needed) so buildRow will right-align the row number column and left-align others
+                    maxContentLen = String(enrichedForms.length).length;
+                } else {
+                    maxContentLen = Math.max(
+                        ...enrichedForms.map(form => String((form as Record<string, any>)[col.key] || '').length)
+                    );
+                }
                 return Math.max(col.label.length, maxContentLen) + 2;
             });
 
             const buildRow = (rowData: string[]) => {
                 return rowData.map((val, idx) => {
                     const str = val || '';
+                    if (cols[idx].key === 'Row') {
+                        return str.padStart(colWidths[idx], ' ');
+                    }
                     return str.padEnd(colWidths[idx], ' ');
                 }).join('| ');
             };
@@ -638,14 +662,15 @@ export const exportEventForms = async (req: Request, res: Response) => {
             txtContent += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
             txtContent += `Total de inscrições: ${enrichedForms.length}\n\n`;
 
-            // Header line
             const headerStrs = cols.map(c => c.label);
             txtContent += buildRow(headerStrs) + '\n';
             txtContent += '-'.repeat(colWidths.reduce((a, b) => a + b, 0) + (cols.length * 2)) + '\n';
 
-            // Rows
-            enrichedForms.forEach(form => {
-                const rowStrs = cols.map(c => String((form as Record<string, any>)[c.key] || ''));
+            enrichedForms.forEach((form, i) => {
+                const rowStrs = cols.map(c => {
+                    if (c.key === 'Row') return String(i + 1);
+                    return String((form as Record<string, any>)[c.key] || '');
+                });
                 txtContent += buildRow(rowStrs) + '\n';
             });
 
